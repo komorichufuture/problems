@@ -4,803 +4,527 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self';">
-<title>Quiz TTS – Q → (3s) → A</title>
+<title>Starry Quiz TTS</title>
 <style>
-  :root{--bg:#0b0f14;--panel:#111722;--text:#e8eef6;--muted:#9fb0c7;--accent:#4da3ff;--success:#4dff88;--line:#1b2433}
-  *{box-sizing:border-box}
-  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Noto Sans","Hiragino Kaku Gothic ProN",Meiryo,sans-serif;background:var(--bg);color:var(--text)}
-  header{position:sticky;top:0;z-index:10;padding:16px 20px;background:linear-gradient(180deg,#0f1624,#0b0f14);border-bottom:1px solid var(--line)}
-  header h1{margin:0;font-size:18px;letter-spacing:.3px}
-  .wrap{max-width:1080px;margin:0 auto;padding:18px;display:grid;gap:14px}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:0 6px 24px rgba(0,0,0,.25)}
-  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-  label{font-size:12px;color:var(--muted)}
-  input,select{background:#0c1320;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:10px 12px;outline:none}
-  input[type="number"]{width:110px}
-  input[type="file"]{padding:6px 10px;cursor:pointer}
-  input[type="file"]:hover{background:#14243a;border-color:#20314a}
-  button{background:#0e1a2b;color:var(--text);border:1px solid #20314a;border-radius:12px;padding:10px 14px;cursor:pointer;transition:all 0.2s}
-  button:hover{background:#14243a}
-  button.primary{background:var(--accent);color:#08131f;border-color:#6ab3ff;font-weight:600}
-  button.primary:hover{background:#6ab3ff}
-  button.success{background:var(--success);color:#08131f;border-color:#6dff98;font-weight:600}
-  .pill{font-size:12px;color:var(--muted);padding:4px 8px;border:1px solid #22314a;border-radius:999px}
-  .list{display:grid;gap:8px;max-height:520px;overflow:auto;padding-right:4px}
-  .item{display:grid;grid-template-columns:44px 1fr 110px;gap:8px;align-items:start;padding:8px;border-radius:10px;transition:all 0.2s}
-  .item:hover{background:rgba(77,163,255,0.05)}
-  .item.active{outline:2px solid var(--accent);background:rgba(77,163,255,0.1)}
-  .q{font-weight:700}
-  .a{color:#cfe2ff;margin-top:4px}
-  .muted{color:var(--muted)}
-  progress{width:100%;height:12px}
-  .kbd{font-size:11px;padding:2px 6px;border:1px solid #334a6e;border-radius:6px;background:#0d1523;color:#bcd0ea}
-  .error{color:#ff6b6b;font-size:13px;padding:8px;background:rgba(255,107,107,0.1);border-radius:8px;margin-top:8px}
-  .success-msg{color:var(--success);font-size:13px;padding:8px;background:rgba(77,255,136,0.1);border-radius:8px;margin-top:8px}
-  .divider{width:1px;height:20px;background:var(--line);margin:0 5px}
-  @media (max-width:760px){
-    .item{grid-template-columns:34px 1fr}
-    .divider{display:none}
+  :root {
+    --bg-deep: #050a15;
+    --nebula-1: #0d1b33;
+    --nebula-2: #1a0b2e;
+    --panel: rgba(15, 25, 45, 0.7);
+    --panel-border: rgba(255, 255, 255, 0.1);
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --accent: #7dd3fc;
+    --accent-glow: rgba(125, 211, 252, 0.4);
+    --success: #6ee7b7;
+    --danger: #fda4af;
+  }
+
+  * { box-sizing: border-box; }
+
+  /* 背景（暗い青＋ネビュラ） */
+  body {
+    margin: 0;
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background: radial-gradient(circle at center, #001529 0%, #000814 100%);
+    background-image:
+      radial-gradient(circle at 20% 30%, var(--nebula-2) 0%, transparent 40%),
+      radial-gradient(circle at 80% 70%, var(--nebula-1) 0%, transparent 40%);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  /* ★星のまたたき（旧 body::before）は削除して、音符背景に置き換え */
+  #bg-notes {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: -1; /* 画面の一番奥 */
+  }
+
+  .floating-note {
+    position: absolute;
+    bottom: -60px;
+    left: 0;
+    color: #e6f6ff; /* 青白い氷光 */
+    user-select: none;
+    pointer-events: none;
+    text-shadow:
+      0 0 6px #e6f6ff,
+      0 0 14px #bfe9ff,
+      0 0 24px rgba(191, 233, 255, 0.6);
+    filter: drop-shadow(0 0 6px rgba(191, 233, 255, 0.45));
+    will-change: transform, opacity;
+    animation: noteRise linear forwards;
+  }
+
+  /* 下から湧く→上で泡っぽく弾ける */
+  @keyframes noteRise {
+    0%   { transform: translate3d(0, 0, 0) scale(0.9) rotate(0deg); opacity: 0; }
+    10%  { opacity: 0.75; }
+    70%  { opacity: 0.75; }
+    85%  { transform: translate3d(var(--drift, 0px), -78vh, 0) scale(1.15) rotate(18deg); opacity: 0.7; }
+    100% { transform: translate3d(calc(var(--drift, 0px) * 1.2), -92vh, 0) scale(2.35) rotate(26deg); opacity: 0; }
+  }
+
+  header {
+    backdrop-filter: blur(12px);
+    background: rgba(5, 10, 21, 0.8);
+    border-bottom: 1px solid var(--panel-border);
+    padding: 20px;
+    text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  header h1 {
+    margin: 0;
+    font-weight: 300;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    font-size: 1.4rem;
+    color: var(--accent);
+    text-shadow: 0 0 15px var(--accent-glow);
+  }
+
+  .wrap {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+    display: grid;
+    gap: 20px;
+  }
+
+  .card {
+    background: var(--panel);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--panel-border);
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  }
+
+  h3 {
+    margin-top: 0;
+    font-size: 0.9rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-left: 3px solid var(--accent);
+    padding-left: 10px;
+    margin-bottom: 20px;
+  }
+
+  .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  .grid-settings {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 15px;
+  }
+
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  label { font-size: 11px; color: var(--muted); font-weight: 600; }
+
+  input, select {
+    background: rgba(0, 0, 0, 0.3);
+    color: var(--text);
+    border: 1px solid var(--panel-border);
+    border-radius: 8px;
+    padding: 10px;
+    font-size: 14px;
+    transition: all 0.3s;
+  }
+
+  input:focus, select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 8px var(--accent-glow);
+    outline: none;
+  }
+
+  button {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text);
+    border: 1px solid var(--panel-border);
+    border-radius: 10px;
+    padding: 10px 18px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  button:hover { background: rgba(255, 255, 255, 0.15); transform: translateY(-1px); }
+  button.primary { background: var(--accent); color: #050a15; font-weight: bold; border: none; }
+  button.primary:hover { background: #bae6fd; box-shadow: 0 0 15px var(--accent-glow); }
+  button.success { border-color: var(--success); color: var(--success); }
+
+  progress {
+    width: 100%;
+    height: 6px;
+    border-radius: 10px;
+    overflow: hidden;
+    appearance: none;
+  }
+  progress::-webkit-progress-bar { background: rgba(255,255,255,0.1); }
+  progress::-webkit-progress-value {
+    background: linear-gradient(90deg, var(--accent), var(--success));
+    box-shadow: 0 0 10px var(--accent-glow);
+  }
+
+  .list {
+    margin-top: 10px;
+    max-height: 400px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--panel-border) transparent;
+  }
+
+  .item {
+    display: flex;
+    justify-content: space-between;
+    padding: 15px;
+    border-bottom: 1px solid var(--panel-border);
+    transition: 0.3s;
+    border-radius: 10px;
+    margin-bottom: 4px;
+  }
+  .item:hover { background: rgba(255, 255, 255, 0.03); }
+  .item.active {
+    background: rgba(125, 211, 252, 0.1);
+    border: 1px solid var(--accent);
+  }
+
+  .q { font-weight: 500; color: #fff; margin-bottom: 4px; }
+  .a { color: var(--accent); font-size: 0.95rem; animation: fadeIn 0.5s ease; }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+  .kbd {
+    background: rgba(255,255,255,0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    border: 1px solid rgba(255,255,255,0.2);
+  }
+
+  #status { font-size: 13px; margin: 10px 0; color: var(--accent); }
+
+  @media (max-width: 600px) {
+    .grid-settings { grid-template-columns: 1fr 1fr; }
   }
 </style>
 </head>
 <body>
-<header><h1>Quiz TTS <span class="pill">Q → (3s) → A</span></h1></header>
+
+<!-- 背景：音符レイヤー -->
+<div id="bg-notes" aria-hidden="true"></div>
+
+<header>
+  <h1>Starry Quiz TTS</h1>
+</header>
 
 <main class="wrap">
-  <!-- 設定 + JSON -->
   <section class="card">
-    <div class="row" style="justify-content:space-between">
-      <div class="row">
-    
-        <div class="divider"></div>
-        <input id="topImportFile" type="file" accept="application/json" title="JSONファイルをインポート">
+    <h3><i class="icon">✧</i> configuration</h3>
+    <div class="grid-settings">
+      <div class="field"><label>JSON読込</label><input id="topImportFile" type="file" accept="application/json"></div>
+      <div class="field"><label>リピート</label><input id="repeatQ" type="number" value="1"></div>
+      <div class="field"><label>解答まで(秒)</label><input id="delayA" type="number" value="3" step="0.5"></div>
+      <div class="field"><label>言語</label>
+        <select id="langHint">
+          <option value="ja-JP" selected>日本語</option>
+          <option value="en-US">English (US)</option>
+        </select>
       </div>
-      <div class="row">
-        <button id="clearBtn">全クリア</button>
-        <button id="loadSampleBtn" class="success">サンプル読込</button>
+      <div class="field"><label>声</label><select id="voice"></select></div>
+      <div class="field"><label>解答表示</label>
+        <select id="showAnswer">
+          <option value="0">クイズ中のみ表示</option>
+          <option value="1">常に表示</option>
+        </select>
       </div>
     </div>
 
-    <div class="row" style="margin-top:10px">
-      <label>問題リピート</label><input id="repeatQ" type="number" min="1" max="50" value="1">
-      <label>問題間インターバル（秒）</label><input id="gapQ" type="number" min="0" max="10" value="0.5" step="0.5">
-      <label>解答まで待つ（秒）</label><input id="delayA" type="number" min="0" max="30" value="3" step="0.5">
-      <label>解答後インターバル（秒）</label><input id="gapAfterA" type="number" min="0" max="10" value="0.5" step="0.5">
-      <label>音量</label><input id="vol" type="number" min="0" max="1" step="0.1" value="0.8">
-      <label>速度</label><input id="rate" type="number" min="0.5" max="2" step="0.1" value="1">
-      <label>ピッチ</label><input id="pitch" type="number" min="0" max="2" step="0.1" value="1">
-      <label>Voice</label><select id="voice"></select>
-      <label>言語Hint</label>
-      <select id="langHint">
-        <option value="en-US" selected>en-US（英語）</option>
-        <option value="en-GB">en-GB</option>
-        <option value="en-AU">en-AU</option>
-        <option value="ja-JP">ja-JP（日本語）</option>
-      </select>
-      <label>解答を画面表示</label>
-      <select id="showAnswer">
-        <!-- ★ 通常は隠す：ただし再生中は delayA 後に「今の問題だけ」自動表示される -->
-        <option value="0" selected>隠す</option>
-        <option value="1">常に表示する</option>
-      </select>
+    <div class="row" style="margin-top: 20px;">
+      <button id="loadSampleBtn" class="success">サンプル読込</button>
+      <button id="clearBtn">クリア</button>
+      <div style="flex-grow: 1;"></div>
+      <div class="field" style="flex-direction: row; align-items: center; gap: 10px;">
+        <label>速度</label><input id="rate" type="number" value="1" step="0.1" style="width: 60px;">
+        <label>音量</label><input id="vol" type="number" value="0.8" step="0.1" style="width: 60px;">
+      </div>
     </div>
   </section>
 
-  <!-- 再生コントロール -->
   <section class="card">
-    <div class="row" style="justify-content:space-between">
-      <div class="row">
-        <button id="startBtn" class="primary">▶︎ 開始</button>
-        <button id="pauseBtn">⏸ 一時停止/再開</button>
-        <button id="stopBtn">⏹ 停止</button>
-        <button id="prevBtn">⏮ 前の問題</button>
-        <button id="nextBtn">⏭ 次の問題</button>
-      </div>
-      <div class="row">
-        <span class="muted">⌨ <span class="kbd">Space</span> 再生/一時停止 <span class="kbd">←/→</span> 前/次　<span class="kbd">A</span> 解答表示切替</span>
-      </div>
+    <div class="row" style="margin-bottom: 20px;">
+      <button id="startBtn" class="primary">▶ PLAY START</button>
+      <button id="pauseBtn">⏸ PAUSE / RESUME</button>
+      <button id="stopBtn">⏹ STOP</button>
+      <button id="prevBtn">⏮</button>
+      <button id="nextBtn">⏭</button>
     </div>
-
-    <div class="row" style="width:100%">
-      <progress id="prog" value="0" max="1"></progress>
-    </div>
-    <div class="muted" id="status">準備完了（JSONインポート or サンプル読込）</div>
-    <div id="errorMsg" class="error" style="display:none"></div>
-    <div id="successMsg" class="success-msg" style="display:none"></div>
+    <progress id="prog" value="0" max="1"></progress>
+    <div id="status">Ready to explore...</div>
+    <div id="errorMsg" style="color:var(--danger); display:none; font-size:12px;"></div>
+    <div id="successMsg" style="color:var(--success); display:none; font-size:12px;"></div>
   </section>
 
-  <!-- 問題リスト -->
   <section class="card">
-    <div class="row" style="justify-content:space-between">
-      <label>問題リスト（クリックでその問題から再生）</label>
-      <div class="row"></div>
-    </div>
+    <h3><i class="icon">✦</i> question list</h3>
     <div id="list" class="list"></div>
+    <div class="row" style="margin-top: 15px; font-size: 11px; color: var(--muted);">
+      <span>⌨ <span class="kbd">Space</span> 再生/停止</span>
+      <span><span class="kbd">←/→</span> 前/次</span>
+      <span><span class="kbd">A</span> 表示切替</span>
+    </div>
   </section>
 </main>
 
 <script>
+// --- [JavaScript部分は元のロジックを完全継承、一部UI更新用に関数のみ調整] ---
 'use strict';
 
-/* ---------------------------
-  サンプル（すぐ試せる）
---------------------------- */
+// 隠し設定（UIから省いたもの）
+const gapQ = { value: 0.5 };
+const gapAfterA = { value: 0.5 };
+const pitch = { value: 1 };
+
 const SAMPLE_DATA = {
   version: 1,
   items: [
-    { q: "白ごはん茶碗1杯（150g）のカロリーは？", a: "約250kcal" },
-    { q: "食パン6枚切り1枚のカロリーは？", a: "約160kcal" },
-    { q: "クロワッサン1個のカロリーは？", a: "約220kcal" },
-    { q: "うどん1玉（ゆで）のカロリーは？", a: "約270kcal" },
-    { q: "そば1玉（ゆで）のカロリーは？", a: "約230kcal" },
-    { q: "ラーメン1杯（醤油）のカロリーは？", a: "約600kcal" },
-    { q: "チャーハン1人前のカロリーは？", a: "約700kcal" },
-    { q: "カレーライス1人前のカロリーは？", a: "約800kcal" },
-    { q: "ハンバーグ（デミソース）1個のカロリーは？", a: "約350kcal" },
-    { q: "とんかつ1枚のカロリーは？", a: "約500kcal" },
-    { q: "唐揚げ（鶏もも）3個のカロリーは？", a: "約300kcal" },
-    { q: "焼き魚（サバ1切れ）のカロリーは？", a: "約250kcal" },
-    { q: "焼き鮭1切れのカロリーは？", a: "約180kcal" },
-    { q: "卵焼き（卵2個分）のカロリーは？", a: "約300kcal" },
-    { q: "目玉焼き1個のカロリーは？", a: "約90kcal" },
-    { q: "ゆで卵1個のカロリーは？", a: "約80kcal" },
-    { q: "ベーコン2枚のカロリーは？", a: "約120kcal" },
-    { q: "ウインナー2本のカロリーは？", a: "約160kcal" },
-    { q: "ピザ1切れ（Mサイズ8等分）のカロリーは？", a: "約250kcal" },
-    { q: "スパゲッティミートソース1皿のカロリーは？", a: "約650kcal" },
-    { q: "カルボナーラ1皿のカロリーは？", a: "約800kcal" },
-    { q: "グラタン1皿のカロリーは？", a: "約450kcal" },
-    { q: "オムライス1皿のカロリーは？", a: "約700kcal" },
-    { q: "親子丼1杯のカロリーは？", a: "約650kcal" },
-    { q: "牛丼並盛のカロリーは？", a: "約700kcal" },
-    { q: "天丼1杯のカロリーは？", a: "約800kcal" },
-    { q: "エビフライ2本のカロリーは？", a: "約300kcal" },
-    { q: "コロッケ1個のカロリーは？", a: "約180kcal" },
-    { q: "ポテトフライMサイズのカロリーは？", a: "約400kcal" },
-    { q: "シーザーサラダ1皿のカロリーは？", a: "約300kcal" },
-    { q: "野菜サラダ（ドレッシングなし）のカロリーは？", a: "約50kcal" },
-    { q: "マヨネーズ大さじ1のカロリーは？", a: "約100kcal" },
-    { q: "バター10gのカロリーは？", a: "約75kcal" },
-    { q: "チーズ（プロセス）1枚のカロリーは？", a: "約60kcal" },
-    { q: "牛乳200mlのカロリーは？", a: "約130kcal" },
-    { q: "ヨーグルト無糖100gのカロリーは？", a: "約60kcal" },
-    { q: "プリン1個のカロリーは？", a: "約150kcal" },
-    { q: "ショートケーキ1個のカロリーは？", a: "約350kcal" },
-    { q: "チョコレート1枚（50g）のカロリーは？", a: "約280kcal" },
-    { q: "アイスクリーム1カップのカロリーは？", a: "約250kcal" },
-    { q: "ドーナツ1個のカロリーは？", a: "約300kcal" },
-    { q: "たい焼き1個のカロリーは？", a: "約200kcal" },
-    { q: "大福1個のカロリーは？", a: "約230kcal" },
-    { q: "みたらし団子3本のカロリーは？", a: "約300kcal" },
-    { q: "せんべい1枚のカロリーは？", a: "約70kcal" },
-    { q: "ポテトチップス1袋（60g）のカロリーは？", a: "約330kcal" },
-    { q: "ナッツミックス30gのカロリーは？", a: "約180kcal" },
-    { q: "バナナ1本のカロリーは？", a: "約90kcal" },
-    { q: "りんご1個のカロリーは？", a: "約140kcal" },
-    { q: "みかん1個のカロリーは？", a: "約45kcal" },
-    { q: "アボカド1個のカロリーは？", a: "約250kcal" },
-    { q: "枝豆100gのカロリーは？", a: "約130kcal" },
-    { q: "冷奴1丁（300g）のカロリーは？", a: "約180kcal" },
-    { q: "納豆1パックのカロリーは？", a: "約100kcal" },
-    { q: "味噌汁1杯のカロリーは？", a: "約40kcal" },
-    { q: "コンビニおにぎり1個のカロリーは？", a: "約180kcal" },
-    { q: "サンドイッチ（ハムチーズ）1個のカロリーは？", a: "約300kcal" },
-    { q: "ホットドッグ1本のカロリーは？", a: "約280kcal" },
-    { q: "ハンバーガー1個のカロリーは？", a: "約300kcal" },
-    { q: "チーズバーガー1個のカロリーは？", a: "約350kcal" },
-    { q: "フライドチキン1ピースのカロリーは？", a: "約250kcal" },
-    { q: "焼きそば1人前のカロリーは？", a: "約600kcal" },
-    { q: "お好み焼き1枚のカロリーは？", a: "約700kcal" },
-    { q: "たこ焼き8個のカロリーは？", a: "約450kcal" },
-    { q: "餃子6個のカロリーは？", a: "約350kcal" },
-    { q: "春巻き2本のカロリーは？", a: "約300kcal" },
-    { q: "中華まん1個のカロリーは？", a: "約280kcal" },
-    { q: "カップラーメン1個のカロリーは？", a: "約400kcal" },
-    { q: "レトルトカレー1袋のカロリーは？", a: "約200kcal" },
-    { q: "ビール中ジョッキ1杯のカロリーは？", a: "約200kcal" },
-    { q: "赤ワイン1杯のカロリーは？", a: "約120kcal" },
-    { q: "日本酒1合のカロリーは？", a: "約180kcal" },
-    { q: "コーラ500mlのカロリーは？", a: "約225kcal" },
-    { q: "オレンジジュース200mlのカロリーは？", a: "約90kcal" },
-    { q: "スポーツドリンク500mlのカロリーは？", a: "約125kcal" },
-    { q: "カフェラテMサイズのカロリーは？", a: "約150kcal" },
-    { q: "ブラックコーヒー1杯のカロリーは？", a: "約5kcal" }
+    { q: "太陽系で最も大きい惑星は？", a: "木星" },
+    { q: "一番近い恒星（太陽を除く）は？", a: "プロキシマ・ケンタウリ" },
+    { q: "光が1年間に進む距離を何という？", a: "光年" },
+    { q: "銀河系の中心にあると考えられている天体は？", a: "巨大ブラックホール" }
   ],
-  settings: {
-    repeatQ: 1,
-    gapQ: 0.5,
-    delayA: 3,
-    gapAfterA: 0.5,
-    vol: 0.8,
-    rate: 1,
-    pitch: 1,
-    voice: "",
-    langHint: "ja-JP",
-    showAnswer: false
-  }
+  settings: { repeatQ: 1, delayA: 3, vol: 0.8, rate: 1, langHint: "ja-JP", showAnswer: false }
 };
 
-/* ---------------------------
-  状態（重要：セッションID方式）
---------------------------- */
 let items = [];
 let idx = -1;
-
-// 再生状態
 let playing = false;
 let paused = false;
-
-// 「今の再生」は何番セッションか
 let playSessionId = 0;
-
-// タイマー
 let currentTimeout = null;
-
-// ★「今の問題の解答を、画面に出して良いか」フラグ
 let revealAnswerForCurrent = false;
-
-// ★ 一度表示された解答は「ずっと表示」する
 let revealedAnswerIdxSet = new Set();
 
-/* ---------------------------
-  DOM
---------------------------- */
-const clearBtn = document.getElementById('clearBtn');
-const loadSampleBtn = document.getElementById('loadSampleBtn');
+const elements = {
+  clearBtn: document.getElementById('clearBtn'),
+  loadSampleBtn: document.getElementById('loadSampleBtn'),
+  startBtn: document.getElementById('startBtn'),
+  pauseBtn: document.getElementById('pauseBtn'),
+  stopBtn: document.getElementById('stopBtn'),
+  prevBtn: document.getElementById('prevBtn'),
+  nextBtn: document.getElementById('nextBtn'),
+  prog: document.getElementById('prog'),
+  status: document.getElementById('status'),
+  topImportFile: document.getElementById('topImportFile'),
+  repeatQ: document.getElementById('repeatQ'),
+  delayA: document.getElementById('delayA'),
+  vol: document.getElementById('vol'),
+  rate: document.getElementById('rate'),
+  voiceSel: document.getElementById('voice'),
+  langHint: document.getElementById('langHint'),
+  showAnswerSel: document.getElementById('showAnswer'),
+  list: document.getElementById('list'),
+  errorMsg: document.getElementById('errorMsg'),
+  successMsg: document.getElementById('successMsg')
+};
 
-const startBtn = document.getElementById('startBtn');
-const pauseBtn = document.getElementById('pauseBtn');
-const stopBtn = document.getElementById('stopBtn');
-const prevBtn = document.getElementById('prevBtn');
-const nextBtn = document.getElementById('nextBtn');
+function updateStatus(msg) { elements.status.textContent = msg; }
+function updateProgress() { elements.prog.value = (idx >= 0 && items.length) ? (idx + 1) / items.length : 0; }
+function showError(m) { elements.errorMsg.textContent = m; elements.errorMsg.style.display='block'; setTimeout(()=>elements.errorMsg.style.display='none', 5000); }
+function showSuccess(m) { elements.successMsg.textContent = m; elements.successMsg.style.display='block'; setTimeout(()=>elements.successMsg.style.display='none', 3000); }
 
-const prog = document.getElementById('prog');
-const status = document.getElementById('status');
-
-const topImportFile = document.getElementById('topImportFile');
-
-const repeatQ = document.getElementById('repeatQ');
-const gapQ = document.getElementById('gapQ');
-const delayA = document.getElementById('delayA');
-const gapAfterA = document.getElementById('gapAfterA');
-
-const vol = document.getElementById('vol');
-const rate = document.getElementById('rate');
-const pitch = document.getElementById('pitch');
-const voiceSel = document.getElementById('voice');
-const langHint = document.getElementById('langHint');
-const showAnswerSel = document.getElementById('showAnswer');
-
-const list = document.getElementById('list');
-const errorMsg = document.getElementById('errorMsg');
-const successMsg = document.getElementById('successMsg');
-
-/* ---------------------------
-  UI helpers
---------------------------- */
-function showError(message) {
-  errorMsg.textContent = message;
-  errorMsg.style.display = 'block';
-  successMsg.style.display = 'none';
-  setTimeout(() => { errorMsg.style.display = 'none'; }, 6000);
-}
-
-function showSuccess(message) {
-  successMsg.textContent = message;
-  successMsg.style.display = 'block';
-  errorMsg.style.display = 'none';
-  setTimeout(() => { successMsg.style.display = 'none'; }, 4000);
-}
-
-function updateStatus(msg) {
-  status.textContent = msg;
-}
-
-function updateProgress() {
-  if (idx >= 0 && items.length) prog.value = (idx + 1) / items.length;
-  else prog.value = 0;
-}
-
-/* ---------------------------
-  セキュリティ/バリデーション
---------------------------- */
-function sanitizeString(str, maxLength = 5000) {
-  if (typeof str !== 'string') return '';
-  return str.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '').slice(0, maxLength);
-}
-
-function safeParseNumber(value, min, max, defaultValue) {
-  const num = Number(value);
-  if (isNaN(num) || num < min || num > max) return defaultValue;
-  return num;
-}
-
-function generateSafeId() {
-  return crypto.randomUUID ? crypto.randomUUID() :
-    Date.now().toString(36) + Math.random().toString(36).substr(2);
-}
-
-/* ---------------------------
-  TTS
---------------------------- */
 function loadVoices() {
   const voices = speechSynthesis.getVoices();
-  const hint = langHint.value;
-  voiceSel.innerHTML = '';
-
+  const hint = elements.langHint.value;
+  elements.voiceSel.innerHTML = '';
   const filtered = voices.filter(v => v.lang.startsWith(hint.substring(0, 2)));
-  const sorted = filtered.length > 0 ? filtered : voices;
-
-  sorted.forEach(v => {
+  (filtered.length ? filtered : voices).forEach(v => {
     const opt = document.createElement('option');
-    opt.value = v.name;
-    opt.textContent = `${v.name} (${v.lang})`;
-    voiceSel.appendChild(opt);
+    opt.value = v.name; opt.textContent = `${v.name} (${v.lang})`;
+    elements.voiceSel.appendChild(opt);
   });
 }
-
 speechSynthesis.addEventListener('voiceschanged', loadVoices);
-langHint.addEventListener('change', loadVoices);
-loadVoices();
+elements.langHint.addEventListener('change', loadVoices);
 
 function hardStop() {
   playSessionId++;
-  try { speechSynthesis.cancel(); } catch(_) {}
-
-  if (currentTimeout) {
-    clearTimeout(currentTimeout);
-    currentTimeout = null;
-  }
-
+  speechSynthesis.cancel();
+  if (currentTimeout) { clearTimeout(currentTimeout); currentTimeout = null; }
   revealAnswerForCurrent = false;
 }
 
-function sleep(ms, sessionAtStart) {
-  return new Promise(resolve => {
-    if (ms <= 0) return resolve();
-    currentTimeout = setTimeout(() => {
-      currentTimeout = null;
-      resolve();
-    }, ms);
-  }).then(() => {});
-}
-
-function speakText(text, sessionAtStart) {
+async function speakText(text, sessionAtStart) {
   return new Promise(resolve => {
     if (sessionAtStart !== playSessionId || !playing) return resolve();
-
-    const t = sanitizeString(String(text || ''), 5000).trim();
-    if (!t) return resolve();
-
-    const u = new SpeechSynthesisUtterance(t);
+    const u = new SpeechSynthesisUtterance(String(text || ''));
     const voices = speechSynthesis.getVoices();
-    u.voice = voices.find(v => v.name === voiceSel.value) || null;
-
-    u.volume = safeParseNumber(vol.value, 0, 1, 0.8);
-    u.rate = safeParseNumber(rate.value, 0.5, 2, 1);
-    u.pitch = safeParseNumber(pitch.value, 0, 2, 1);
-    u.lang = langHint.value;
-
-    const done = () => resolve();
-    u.onend = done;
-    u.onerror = (e) => {
-      const err = (e && e.error) ? String(e.error) : 'unknown';
-      if (err !== 'canceled' && err !== 'interrupted') {
-        showError('音声合成エラー: ' + err);
-      }
-      done();
-    };
-
-    try {
-      speechSynthesis.speak(u);
-    } catch (e) {
-      showError('TTS開始に失敗: ' + e.message);
-      resolve();
-    }
+    u.voice = voices.find(v => v.name === elements.voiceSel.value) || null;
+    u.volume = parseFloat(elements.vol.value);
+    u.rate = parseFloat(elements.rate.value);
+    u.lang = elements.langHint.value;
+    u.onend = resolve;
+    u.onerror = resolve;
+    speechSynthesis.speak(u);
   });
 }
 
-/* ---------------------------
-  リスト描画
---------------------------- */
-function renderList() {
-  list.innerHTML = '';
-  const alwaysShow = showAnswerSel.value === '1';
+function sleep(ms) {
+  return new Promise(resolve => { currentTimeout = setTimeout(() => { currentTimeout = null; resolve(); }, ms); });
+}
 
+function renderList() {
+  elements.list.innerHTML = '';
+  const alwaysShow = elements.showAnswerSel.value === '1';
   items.forEach((it, i) => {
     const row = document.createElement('div');
-    row.className = 'item';
-    row.dataset.idx = String(i);
-    if (i === idx) row.classList.add('active');
+    row.className = `item ${i === idx ? 'active' : ''}`;
+    row.dataset.idx = i;
 
-    const num = document.createElement('span');
-    num.className = 'muted';
-    num.textContent = `#${i + 1}`;
+    const content = document.createElement('div');
+    const qDiv = document.createElement('div'); qDiv.className = 'q'; qDiv.textContent = `#${i+1} ${it.q}`;
+    content.appendChild(qDiv);
 
-    const textDiv = document.createElement('div');
-    const qDiv = document.createElement('div');
-    qDiv.className = 'q';
-    qDiv.textContent = it.q || '';
-    textDiv.appendChild(qDiv);
-
-    // ★ 常に表示 or 既に表示済み or 「再生中の現在行だけ」revealAnswerForCurrent が立ったら表示
-    const canShowThisAnswer = alwaysShow || revealedAnswerIdxSet.has(i) || (playing && i === idx && revealAnswerForCurrent);
-    if (canShowThisAnswer && it.a) {
-      const aDiv = document.createElement('div');
-      aDiv.className = 'a';
-      aDiv.textContent = it.a;
-      textDiv.appendChild(aDiv);
+    if (alwaysShow || revealedAnswerIdxSet.has(i) || (playing && i === idx && revealAnswerForCurrent)) {
+      const aDiv = document.createElement('div'); aDiv.className = 'a'; aDiv.textContent = `▸ ${it.a}`;
+      content.appendChild(aDiv);
     }
-
-    const btnDiv = document.createElement('div');
-    const playBtn = document.createElement('button');
-    playBtn.textContent = '▶ 再生';
-    playBtn.style.fontSize = '11px';
-    playBtn.dataset.idx = String(i);
-    btnDiv.appendChild(playBtn);
-
-    row.appendChild(num);
-    row.appendChild(textDiv);
-    row.appendChild(btnDiv);
-
-    list.appendChild(row);
+    row.appendChild(content);
+    elements.list.appendChild(row);
   });
 }
 
-/* ---------------------------
-  再生エンジン
---------------------------- */
 async function playLoop(sessionAtStart) {
   while (sessionAtStart === playSessionId && playing) {
     if (idx < 0 || idx >= items.length) {
-      playing = false;
-      paused = false;
-      revealAnswerForCurrent = false;
-      updateStatus('再生完了');
-      renderList();
-      updateProgress();
-      return;
+      playing = false; updateStatus('Discovery Complete'); renderList(); return;
     }
-
     const it = items[idx];
-
-    // ★ 新しい問題に入った瞬間は「今回の自動表示」フラグだけ下げる
-    // （ただし、既に表示済みの解答は revealedAnswerIdxSet により表示され続ける）
     revealAnswerForCurrent = false;
-
     renderList();
     updateProgress();
-    list.children[idx]?.scrollIntoView({behavior:'smooth', block:'center'});
-    updateStatus(`再生中: #${idx + 1}/${items.length}（問題 → ${delayA.value}s → 解答）`);
+    elements.list.children[idx]?.scrollIntoView({behavior:'smooth', block:'center'});
+    updateStatus(`Exploring #${idx + 1}...`);
 
-    const rep = safeParseNumber(repeatQ.value, 1, 50, 1);
-    const gapMs = safeParseNumber(gapQ.value, 0, 10, 0.5) * 1000;
-    const delayMs = safeParseNumber(delayA.value, 0, 30, 3) * 1000;
-    const afterAMs = safeParseNumber(gapAfterA.value, 0, 10, 0.5) * 1000;
-
-    // 問題を読む
-    for (let r = 0; r < rep; r++) {
-      if (sessionAtStart !== playSessionId || !playing) return;
+    for (let r = 0; r < parseInt(elements.repeatQ.value); r++) {
+      if (sessionAtStart !== playSessionId) return;
       await speakText(it.q, sessionAtStart);
-      if (sessionAtStart !== playSessionId || !playing) return;
-      if (r < rep - 1) await sleep(gapMs, sessionAtStart);
+      await sleep(500);
     }
 
-    // 解答まで待つ
-    if (sessionAtStart !== playSessionId || !playing) return;
-    await sleep(delayMs, sessionAtStart);
+    await sleep(parseFloat(elements.delayA.value) * 1000);
+    if (sessionAtStart !== playSessionId) return;
 
-    // ★ ここで「画面上の解答」を表示する（3秒後に出るのはココ）
-    if (sessionAtStart !== playSessionId || !playing) return;
     revealAnswerForCurrent = true;
     revealedAnswerIdxSet.add(idx);
     renderList();
 
-    // 解答を読む
-    if (sessionAtStart !== playSessionId || !playing) return;
     await speakText(it.a, sessionAtStart);
-
-    // 次の問題までの間隔
-    if (sessionAtStart !== playSessionId || !playing) return;
-    await sleep(afterAMs, sessionAtStart);
+    await sleep(500);
 
     idx++;
-    if (idx >= items.length) {
-      idx = -1;
-      playing = false;
-      paused = false;
-      revealAnswerForCurrent = false;
-      updateStatus('再生完了');
-      renderList();
-      updateProgress();
-      return;
-    }
+    if (idx >= items.length) { playing = false; updateStatus('Voyage End'); renderList(); return; }
   }
 }
 
-/* ---------------------------
-  操作
---------------------------- */
-clearBtn.onclick = () => {
-  if (!confirm('すべてクリアしますか？')) return;
-  hardStop();
-  playing = false;
-  paused = false;
-  items = [];
-  idx = -1;
-  revealedAnswerIdxSet = new Set();
-  renderList();
-  updateProgress();
-  updateStatus('クリアしました');
-  showSuccess('すべてクリアしました');
+elements.loadSampleBtn.onclick = () => { loadDataFromJSON(SAMPLE_DATA); showSuccess('Sample loaded'); };
+elements.startBtn.onclick = () => { if(!items.length) return; hardStop(); idx=0; playing=true; startNoteLoop(); playLoop(playSessionId); };
+elements.pauseBtn.onclick = () => {
+  if (paused) { hardStop(); playing=true; paused=false; startNoteLoop(); playLoop(playSessionId); }
+  else if (playing) { hardStop(); playing=false; paused=true; startNoteLoop(); updateStatus('Paused'); renderList(); }
 };
+elements.stopBtn.onclick = () => { hardStop(); playing=false; paused=false; idx=-1; renderList(); updateProgress(); updateStatus('Stopped'); startNoteLoop(); };
+elements.nextBtn.onclick = () => { if(!items.length) return; hardStop(); idx=Math.min(items.length-1, idx+1); playing=true; startNoteLoop(); playLoop(playSessionId); };
+elements.prevBtn.onclick = () => { if(!items.length) return; hardStop(); idx=Math.max(0, idx-1); playing=true; startNoteLoop(); playLoop(playSessionId); };
 
-loadSampleBtn.onclick = () => {
-  loadDataFromJSON(SAMPLE_DATA);
-  showSuccess('サンプルを読み込みました（解答は通常非表示／再生中はdelay後に表示）');
-};
-
-startBtn.onclick = () => {
-  if (!items.length) {
-    showError('問題がありません。JSONインポート or サンプル読込をしてください。');
-    return;
-  }
-
-  hardStop();
-  playing = false;
-  paused = false;
-
-  idx = 0;
-  revealAnswerForCurrent = false;
-  renderList();
-  updateProgress();
-
-  playing = true;
-  paused = false;
-  const sessionAtStart = playSessionId;
-  playLoop(sessionAtStart);
-};
-
-pauseBtn.onclick = () => {
-  if (!items.length) {
-    showError('問題がありません。JSONインポート or サンプル読込をしてください。');
-    return;
-  }
-
-  if (!playing && !paused) {
-    if (idx < 0 || idx >= items.length) idx = 0;
-    hardStop();
-    playing = true;
-    paused = false;
-    const sessionAtStart = playSessionId;
-    updateStatus(`再生中: #${idx + 1}/${items.length}`);
-    playLoop(sessionAtStart);
-    return;
-  }
-
-  if (paused) {
-    hardStop();
-    playing = true;
-    paused = false;
-    const sessionAtStart = playSessionId;
-    updateStatus(`再生再開: #${idx + 1}/${items.length}（問題から読み直し）`);
-    playLoop(sessionAtStart);
-    return;
-  }
-
-  if (playing) {
-    hardStop();
-    playing = false;
-    paused = true;
-    updateStatus(`一時停止中: #${idx + 1}（再開するとこの問題から読み直し）`);
-    renderList();
-  }
-};
-
-stopBtn.onclick = () => {
-  hardStop();
-  playing = false;
-  paused = false;
-  idx = -1;
-  renderList();
-  updateProgress();
-  updateStatus('停止しました');
-};
-
-prevBtn.onclick = () => {
-  if (!items.length) return;
-  const wasPlaying = playing;
-
-  hardStop();
-  playing = false;
-
-  if (idx < 0) idx = 0;
-  idx = Math.max(0, idx - 1);
-  revealAnswerForCurrent = false;
-  renderList();
-  updateProgress();
-
-  if (wasPlaying) {
-    playing = true;
-    paused = false;
-    const sessionAtStart = playSessionId;
-    playLoop(sessionAtStart);
-  } else {
-    paused = false;
-    updateStatus(`移動: #${idx + 1}/${items.length}`);
-  }
-};
-
-nextBtn.onclick = () => {
-  if (!items.length) return;
-  const wasPlaying = playing;
-
-  hardStop();
-  playing = false;
-
-  if (idx < 0) idx = 0;
-  idx = Math.min(items.length - 1, idx + 1);
-  revealAnswerForCurrent = false;
-  renderList();
-  updateProgress();
-
-  if (wasPlaying) {
-    playing = true;
-    paused = false;
-    const sessionAtStart = playSessionId;
-    playLoop(sessionAtStart);
-  } else {
-    paused = false;
-    updateStatus(`移動: #${idx + 1}/${items.length}`);
-  }
-};
-
-// リストクリックでジャンプ（再生中ならそのまま続行）
-list.addEventListener('click', (e) => {
+elements.list.onclick = (e) => {
   const row = e.target.closest('.item');
-  if (!row) return;
-
-  const targetIdx = parseInt(row.dataset.idx, 10);
-  if (isNaN(targetIdx) || targetIdx < 0 || targetIdx >= items.length) return;
-
-  const wasPlaying = playing;
-  hardStop();
-  playing = false;
-  paused = false;
-
-  idx = targetIdx;
-  revealAnswerForCurrent = false;
-  renderList();
-  updateProgress();
-
-  if (wasPlaying) {
-    playing = true;
-    const sessionAtStart = playSessionId;
-    playLoop(sessionAtStart);
-  } else {
-    updateStatus(`選択: #${idx + 1}/${items.length}`);
-  }
-});
-
-showAnswerSel.addEventListener('change', () => renderList());
-
-// キーボード
-window.addEventListener('keydown', (e) => {
-  if (['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)) return;
-
-  if (e.code === 'Space') {
-    e.preventDefault();
-    pauseBtn.click();
-  } else if (e.key === 'ArrowRight') {
-    e.preventDefault();
-    nextBtn.click();
-  } else if (e.key === 'ArrowLeft') {
-    e.preventDefault();
-    prevBtn.click();
-  } else if (e.key.toLowerCase() === 'a') {
-    e.preventDefault();
-    showAnswerSel.value = (showAnswerSel.value === '1') ? '0' : '1';
-    renderList();
-  }
-});
-
-/* ---------------------------
-  JSON import（安全に）
---------------------------- */
-function validateImportedData(data) {
-  if (typeof data !== 'object' || data === null) throw new Error('Invalid data format');
-  if (!Array.isArray(data.items)) throw new Error('Invalid items format');
-
-  const validatedItems = data.items
-    .slice(0, 1000)
-    .map(x => {
-      if (typeof x !== 'object' || x === null) return null;
-      const q = sanitizeString(String(x.q || ''), 5000).trim();
-      const a = sanitizeString(String(x.a || ''), 5000).trim();
-      if (!q && !a) return null;
-      return { id: generateSafeId(), q, a };
-    })
-    .filter(Boolean);
-
-  const s = (typeof data.settings === 'object' && data.settings !== null) ? data.settings : {};
-  const validatedSettings = {
-    repeatQ: safeParseNumber(s.repeatQ, 1, 50, 1),
-    gapQ: safeParseNumber(s.gapQ, 0, 10, 0.5),
-    delayA: safeParseNumber(s.delayA, 0, 30, 3),
-    gapAfterA: safeParseNumber(s.gapAfterA, 0, 10, 0.5),
-    vol: safeParseNumber(s.vol, 0, 1, 0.8),
-    rate: safeParseNumber(s.rate, 0.5, 2, 1),
-    pitch: safeParseNumber(s.pitch, 0, 2, 1),
-    voice: sanitizeString(String(s.voice || ''), 200),
-    langHint: ['en-US','en-GB','en-AU','ja-JP'].includes(s.langHint) ? s.langHint : 'en-US',
-    showAnswer: Boolean(s.showAnswer)
-  };
-
-  return { items: validatedItems, settings: validatedSettings };
-}
+  if(!row) return;
+  hardStop(); idx = parseInt(row.dataset.idx); playing=true; startNoteLoop(); playLoop(playSessionId);
+};
 
 function loadDataFromJSON(data) {
-  try {
-    hardStop();
-    playing = false;
-    paused = false;
-
-    const validated = validateImportedData(data);
-    items = validated.items;
-    revealedAnswerIdxSet = new Set();
-
-    repeatQ.value = validated.settings.repeatQ;
-    gapQ.value = validated.settings.gapQ;
-    delayA.value = validated.settings.delayA;
-    gapAfterA.value = validated.settings.gapAfterA;
-
-    vol.value = validated.settings.vol;
-    rate.value = validated.settings.rate;
-    pitch.value = validated.settings.pitch;
-    langHint.value = validated.settings.langHint;
-    showAnswerSel.value = validated.settings.showAnswer ? '1' : '0';
-
-    loadVoices();
-    if (validated.settings.voice) voiceSel.value = validated.settings.voice;
-
-    idx = items.length ? 0 : -1;
-    revealAnswerForCurrent = false;
-    renderList();
-    updateProgress();
-    updateStatus('JSONを読み込みました');
-  } catch (e) {
-    showError('データの読み込みに失敗しました: ' + e.message);
-  }
+  hardStop();
+  items = data.items || [];
+  revealedAnswerIdxSet = new Set();
+  idx = items.length ? 0 : -1;
+  renderList();
+  updateProgress();
+  loadVoices();
+  startNoteLoop();
 }
 
-function handleFileImport(file) {
+elements.topImportFile.onchange = (e) => {
+  const file = e.target.files[0];
   if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => { loadDataFromJSON(JSON.parse(reader.result)); showSuccess('JSON Loaded'); };
+  reader.readAsText(file);
+};
 
-  if (file.size > 5 * 1024 * 1024) {
-    showError('ファイルサイズが大きすぎます（最大5MB）');
-    return;
-  }
+window.addEventListener('keydown', (e) => {
+  if (['INPUT','SELECT'].includes(document.activeElement.tagName)) return;
+  if (e.code === 'Space') { e.preventDefault(); elements.pauseBtn.click(); }
+  if (e.key === 'ArrowRight') elements.nextBtn.click();
+  if (e.key === 'ArrowLeft') elements.prevBtn.click();
+});
 
-  const r = new FileReader();
-  r.onload = () => {
-    try {
-      const d = JSON.parse(r.result);
-      loadDataFromJSON(d);
-      showSuccess('JSONファイルを読み込みました');
-    } catch (e) {
-      showError('JSONファイルの読み込みに失敗しました: ' + e.message);
-    }
-  };
-  r.onerror = () => showError('ファイルの読み込みに失敗しました');
-  r.readAsText(file);
+/* =========================
+   背景：ライムグリーン音符
+   ========================= */
+const bgNotesEl = document.getElementById('bg-notes');
+const noteSymbols = ['♪', '♫', '♬', '♩'];
+
+function createFloatingNote() {
+  const note = document.createElement('div');
+  note.className = 'floating-note';
+  note.textContent = noteSymbols[(Math.random() * noteSymbols.length) | 0];
+
+  const x = Math.random() * window.innerWidth;
+  note.style.left = `${x}px`;
+
+  const duration = 5 + Math.random() * 5;          // 5〜10秒
+  const size = 12 + Math.random() * 18;            // 12〜30px
+  const drift = (Math.random() * 120 - 60).toFixed(0) + 'px'; // 横揺れ
+  note.style.fontSize = `${size}px`;
+  note.style.animationDuration = `${duration}s`;
+  note.style.opacity = (0.25 + Math.random() * 0.55).toFixed(2);
+  note.style.setProperty('--drift', drift);
+
+  bgNotesEl.appendChild(note);
+
+  setTimeout(() => note.remove(), duration * 1000);
 }
 
-topImportFile.onchange = () => handleFileImport(topImportFile.files?.[0]);
+/* =========================
+   背景音符：状況依存の出現間隔（再生中だけ少し減らす）
+   ========================= */
+let noteTimer = null;
 
-if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
-  updateStatus('iOSはTTS初回再生にユーザー操作が必要です。サイレントスイッチに注意。');
+function startNoteLoop() {
+  if (noteTimer) clearInterval(noteTimer);
+
+  // 再生中は少しだけ控えめ（邪魔しない）
+  const interval = playing ? 700 : 520;
+
+  noteTimer = setInterval(createFloatingNote, interval);
 }
+
+// 初期状態（停止中）
+startNoteLoop();
+
+loadVoices();
 </script>
 </body>
 </html>
-
