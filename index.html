@@ -215,8 +215,55 @@
 
   #status { font-size: 13px; margin: 10px 0; color: var(--accent); }
 
+  /* =========================
+     ✅ スマホ最適化（文字が小さい問題の根治）
+     目的：16px未満を消す / タップ領域を確保 / 入力を読みやすく
+     ========================= */
   @media (max-width: 600px) {
-    .grid-settings { grid-template-columns: 1fr 1fr; }
+
+    /* 余白を少し詰めて“拡大しなくても読める密度”へ */
+    header { padding: 14px 12px; }
+    header h1 {
+      font-size: 1.6rem;
+      letter-spacing: 2px;
+    }
+
+    .wrap { padding: 12px; gap: 14px; }
+    .card { padding: 16px; border-radius: 18px; }
+
+    /* 入力エリアは2列固定だと狭い：1列が正義 */
+    .grid-settings { grid-template-columns: 1fr; }
+
+    /* 文字サイズ：iOSのズーム発動（16px未満）を根絶 */
+    body { font-size: 16px; }
+
+    label { font-size: 13px; }
+
+    input, select, textarea, button {
+      font-size: 16px;
+      line-height: 1.25;
+    }
+
+    /* textarea はインラインで 13px 指定されてるので上書き */
+    #directInput { font-size: 16px !important; }
+
+    /* タップ領域：最低44px（指はマウスじゃない） */
+    button { padding: 14px 16px; min-height: 44px; }
+    input, select, textarea { padding: 12px; }
+
+    /* コントロール行は縦積みで押しやすく */
+    .row { gap: 10px; }
+
+    /* “操作ボタン行”だけ縦積み（他のrowは崩さない） */
+    #startBtn, #pauseBtn, #stopBtn, #prevBtn, #nextBtn { width: 100%; justify-content: center; }
+
+    /* キーヒントはスマホでは小さすぎ＆必要度低いので控えめに */
+    .kbd { font-size: 11px; }
+    #status { font-size: 14px; }
+
+    /* 重い端末対策：ブラーを少し軽量化（雰囲気は保つ） */
+    header { backdrop-filter: blur(8px); }
+    .card { backdrop-filter: blur(8px); }
   }
 </style>
 </head>
