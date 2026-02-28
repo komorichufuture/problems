@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self';">
 <title>Starry Quiz TTS</title>
 <style>
@@ -10,7 +10,7 @@
     --bg-deep: #050a15;
     --nebula-1: #0d1b33;
     --nebula-2: #1a0b2e;
-    --panel: rgba(15, 25, 45, 0.7);
+    --panel: rgba(15, 25, 45, 0.75);
     --panel-border: rgba(255, 255, 255, 0.1);
     --text: #e2e8f0;
     --muted: #94a3b8;
@@ -18,11 +18,11 @@
     --accent-glow: rgba(125, 211, 252, 0.4);
     --success: #6ee7b7;
     --danger: #fda4af;
+    --player-h: 90px;
   }
 
-  * { box-sizing: border-box; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-  /* 背景（暗い青＋ネビュラ） */
   body {
     margin: 0;
     font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -34,69 +34,71 @@
     min-height: 100vh;
     overflow-x: hidden;
     position: relative;
+    padding-bottom: calc(var(--player-h) + env(safe-area-inset-bottom));
   }
 
-  /* ★星のまたたき（旧 body::before）は削除して、音符背景に置き換え */
   #bg-notes {
     position: fixed;
     inset: 0;
     overflow: hidden;
     pointer-events: none;
-    z-index: -1; /* 画面の一番奥 */
+    z-index: -1;
   }
 
   .floating-note {
     position: absolute;
     bottom: -60px;
     left: 0;
-    color: #e6f6ff; /* 青白い氷光 */
+    color: #e6f6ff;
     user-select: none;
     pointer-events: none;
-    text-shadow:
-      0 0 6px #e6f6ff,
-      0 0 14px #bfe9ff,
-      0 0 24px rgba(191, 233, 255, 0.6);
-    filter: drop-shadow(0 0 6px rgba(191, 233, 255, 0.45));
+    text-shadow: 0 0 6px #e6f6ff, 0 0 14px #bfe9ff, 0 0 24px rgba(191,233,255,0.6);
+    filter: drop-shadow(0 0 6px rgba(191,233,255,0.45));
     will-change: transform, opacity;
     animation: noteRise linear forwards;
   }
 
-  /* 下から湧く→上で泡っぽく弾ける */
   @keyframes noteRise {
-    0%   { transform: translate3d(0, 0, 0) scale(0.9) rotate(0deg); opacity: 0; }
+    0%   { transform: translate3d(0,0,0) scale(0.9) rotate(0deg); opacity: 0; }
     10%  { opacity: 0.75; }
     70%  { opacity: 0.75; }
-    85%  { transform: translate3d(var(--drift, 0px), -78vh, 0) scale(1.15) rotate(18deg); opacity: 0.7; }
-    100% { transform: translate3d(calc(var(--drift, 0px) * 1.2), -92vh, 0) scale(2.35) rotate(26deg); opacity: 0; }
+    85%  { transform: translate3d(var(--drift,0px),-78vh,0) scale(1.15) rotate(18deg); opacity: 0.7; }
+    100% { transform: translate3d(calc(var(--drift,0px)*1.2),-92vh,0) scale(2.35) rotate(26deg); opacity: 0; }
   }
 
+  /* ─── HEADER ─── */
   header {
     backdrop-filter: blur(12px);
-    background: rgba(5, 10, 21, 0.8);
+    background: rgba(5,10,21,0.85);
     border-bottom: 1px solid var(--panel-border);
-    padding: 20px;
+    padding: 14px 16px;
     text-align: center;
     position: sticky;
     top: 0;
     z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
   }
 
   header h1 {
     margin: 0;
     font-weight: 300;
-    letter-spacing: 4px;
+    letter-spacing: 3px;
     text-transform: uppercase;
-    font-size: 1.4rem;
+    font-size: 1.1rem;
     color: var(--accent);
     text-shadow: 0 0 15px var(--accent-glow);
   }
 
+  /* ─── LAYOUT ─── */
   .wrap {
-    max-width: 900px;
+    max-width: 700px;
     margin: 0 auto;
-    padding: 20px;
-    display: grid;
-    gap: 20px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
   }
 
   .card {
@@ -104,39 +106,134 @@
     backdrop-filter: blur(10px);
     border: 1px solid var(--panel-border);
     border-radius: 20px;
-    padding: 24px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    padding: 18px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
   }
 
   h3 {
-    margin-top: 0;
-    font-size: 0.9rem;
+    margin: 0 0 14px 0;
+    font-size: 0.78rem;
     color: var(--muted);
     text-transform: uppercase;
     letter-spacing: 1px;
     border-left: 3px solid var(--accent);
     padding-left: 10px;
-    margin-bottom: 20px;
   }
 
-  .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  /* ─── NOW PLAYING CARD ─── */
+  #nowPlaying {
+    display: none;
+    text-align: center;
+    padding: 24px 18px;
+  }
+
+  #nowPlaying.visible { display: block; }
+
+  .np-number {
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .np-question {
+    font-size: 1.3rem;
+    font-weight: 500;
+    color: #fff;
+    line-height: 1.5;
+    margin-bottom: 20px;
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .np-answer {
+    font-size: 1.1rem;
+    color: var(--accent);
+    text-shadow: 0 0 10px var(--accent-glow);
+    min-height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.4s;
+  }
+
+  .np-answer.hidden { opacity: 0; }
+
+  .np-progress-bar {
+    width: 100%;
+    height: 4px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 99px;
+    overflow: hidden;
+    margin-top: 16px;
+  }
+
+  .np-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--success));
+    border-radius: 99px;
+    transition: width 0.3s;
+    box-shadow: 0 0 8px var(--accent-glow);
+  }
+
+  /* ─── ACCORDION SETTINGS ─── */
+  .accordion-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+    padding: 0;
+    margin: 0 0 0 0;
+    width: 100%;
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-left: 3px solid var(--accent);
+    padding-left: 10px;
+    touch-action: manipulation;
+  }
+
+  .accordion-toggle .arrow {
+    transition: transform 0.3s;
+    font-size: 0.85rem;
+  }
+
+  .accordion-toggle.open .arrow { transform: rotate(180deg); }
+
+  .accordion-body {
+    display: none;
+    margin-top: 14px;
+  }
+
+  .accordion-body.open { display: block; }
+
+  /* ─── SETTINGS GRID ─── */
   .grid-settings {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 15px;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
   }
 
-  .field { display: flex; flex-direction: column; gap: 6px; }
-  label { font-size: 11px; color: var(--muted); font-weight: 600; }
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  label { font-size: 10px; color: var(--muted); font-weight: 600; }
 
   input, select {
-    background: rgba(0, 0, 0, 0.3);
+    background: rgba(0,0,0,0.35);
     color: var(--text);
     border: 1px solid var(--panel-border);
-    border-radius: 8px;
+    border-radius: 10px;
     padding: 10px;
     font-size: 14px;
     transition: all 0.3s;
+    width: 100%;
   }
 
   input:focus, select:focus, textarea:focus {
@@ -145,31 +242,193 @@
     outline: none;
   }
 
-  button {
-    background: rgba(255, 255, 255, 0.05);
+  textarea {
+    background: rgba(0,0,0,0.35);
     color: var(--text);
     border: 1px solid var(--panel-border);
     border-radius: 10px;
-    padding: 10px 18px;
+    padding: 10px;
+    font-size: 13px;
+    font-family: inherit;
+    resize: vertical;
+    transition: all 0.3s;
+    width: 100%;
+  }
+
+  /* ─── BUTTONS ─── */
+  .btn {
+    background: rgba(255,255,255,0.06);
+    color: var(--text);
+    border: 1px solid var(--panel-border);
+    border-radius: 12px;
+    padding: 12px 16px;
     cursor: pointer;
     font-size: 14px;
-    transition: all 0.3s;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    touch-action: manipulation;
+    min-height: 46px;
+    font-family: inherit;
+  }
+
+  .btn:active { opacity: 0.7; transform: scale(0.97); }
+  .btn.primary { background: var(--accent); color: #050a15; font-weight: 700; border: none; }
+  .btn.success { border-color: var(--success); color: var(--success); }
+  .btn.danger { border-color: var(--danger); color: var(--danger); }
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .btn-row .btn { flex: 1; min-width: 80px; }
+
+  /* ─── STATUS ─── */
+  #status {
+    font-size: 12px;
+    color: var(--accent);
+    text-align: center;
+    letter-spacing: 1px;
+  }
+
+  #errorMsg { color: var(--danger); font-size: 12px; display: none; text-align: center; margin-top: 6px; }
+  #successMsg { color: var(--success); font-size: 12px; display: none; text-align: center; margin-top: 6px; }
+
+  /* ─── QUESTION LIST ─── */
+  .list {
+    max-height: 320px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--panel-border) transparent;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 14px 12px;
+    border-bottom: 1px solid var(--panel-border);
+    transition: 0.2s;
+    border-radius: 10px;
+    margin-bottom: 3px;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+
+  .item:active { background: rgba(125,211,252,0.08); }
+  .item.active { background: rgba(125,211,252,0.1); border: 1px solid var(--accent); }
+
+  .q { font-weight: 500; color: #fff; margin-bottom: 3px; font-size: 0.9rem; }
+  .a { color: var(--accent); font-size: 0.85rem; animation: fadeIn 0.5s ease; }
+  .item-num { font-size: 0.7rem; color: var(--muted); min-width: 28px; padding-top: 2px; }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ─── BOTTOM PLAYER BAR ─── */
+  #playerBar {
+    position: fixed;
+    bottom: 0;
+    left: 0; right: 0;
+    height: var(--player-h);
+    padding-bottom: env(safe-area-inset-bottom);
+    background: rgba(5, 12, 28, 0.97);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid var(--panel-border);
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 8px;
+    padding-top: 10px;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .player-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+  }
+
+  .ctrl-btn {
+    background: none;
+    border: none;
+    color: var(--text);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s;
+    touch-action: manipulation;
+    font-size: 20px;
+    width: 44px;
+    height: 44px;
+    font-family: inherit;
+  }
+
+  .ctrl-btn:active { transform: scale(0.88); opacity: 0.7; }
+
+  .ctrl-btn.play-main {
+    background: var(--accent);
+    color: #050a15;
+    width: 54px;
+    height: 54px;
+    font-size: 22px;
+    box-shadow: 0 0 18px var(--accent-glow);
+  }
+
+  .ctrl-btn.play-main:active { transform: scale(0.9); }
+
+  .player-progress {
     display: flex;
     align-items: center;
     gap: 8px;
+    font-size: 10px;
+    color: var(--muted);
   }
 
-  button:hover { background: rgba(255, 255, 255, 0.15); transform: translateY(-1px); }
-  button.primary { background: var(--accent); color: #050a15; font-weight: bold; border: none; }
-  button.primary:hover { background: #bae6fd; box-shadow: 0 0 15px var(--accent-glow); }
-  button.success { border-color: var(--success); color: var(--success); }
+  .player-prog-track {
+    flex: 1;
+    height: 3px;
+    background: rgba(255,255,255,0.12);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+
+  .player-prog-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--success));
+    border-radius: 99px;
+    transition: width 0.4s linear;
+    box-shadow: 0 0 6px var(--accent-glow);
+  }
+
+  /* ─── DESKTOP: hide bottom bar, show inline controls ─── */
+  @media (min-width: 700px) {
+    body { padding-bottom: 0; }
+    #playerBar { display: none; }
+    #desktopControls { display: flex !important; }
+    .grid-settings { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+  }
+
+  #desktopControls {
+    display: none;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+
+  #desktopControls .btn { min-width: 110px; }
 
   progress {
     width: 100%;
-    height: 6px;
+    height: 5px;
     border-radius: 10px;
     overflow: hidden;
     appearance: none;
+    display: block;
+    margin-bottom: 8px;
   }
   progress::-webkit-progress-bar { background: rgba(255,255,255,0.1); }
   progress::-webkit-progress-value {
@@ -177,147 +436,135 @@
     box-shadow: 0 0 10px var(--accent-glow);
   }
 
-  .list {
-    margin-top: 10px;
-    max-height: 400px;
-    overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: var(--panel-border) transparent;
-  }
-
-  .item {
-    display: flex;
-    justify-content: space-between;
-    padding: 15px;
-    border-bottom: 1px solid var(--panel-border);
-    transition: 0.3s;
-    border-radius: 10px;
-    margin-bottom: 4px;
-  }
-  .item:hover { background: rgba(255, 255, 255, 0.03); }
-  .item.active {
-    background: rgba(125, 211, 252, 0.1);
-    border: 1px solid var(--accent);
-  }
-
-  .q { font-weight: 500; color: #fff; margin-bottom: 4px; }
-  .a { color: var(--accent); font-size: 0.95rem; animation: fadeIn 0.5s ease; }
-
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-
   .kbd {
     background: rgba(255,255,255,0.1);
     padding: 2px 6px;
     border-radius: 4px;
-    font-size: 10px;
+    font-size: 9px;
     border: 1px solid rgba(255,255,255,0.2);
   }
 
-  #status { font-size: 13px; margin: 10px 0; color: var(--accent); }
-
-  @media (max-width: 600px) {
-    .grid-settings { grid-template-columns: 1fr 1fr; }
+  .hint-row {
+    display: none;
+    gap: 10px;
+    flex-wrap: wrap;
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 10px;
   }
+
+  @media (min-width: 700px) { .hint-row { display: flex; } }
 </style>
 </head>
 <body>
 
-<!-- 背景：音符レイヤー -->
 <div id="bg-notes" aria-hidden="true"></div>
 
 <header>
-  <h1>Starry Quiz TTS</h1>
+  <h1>★ Starry Quiz TTS</h1>
+  <div id="status">Ready...</div>
 </header>
 
 <main class="wrap">
-  <section class="card">
-    <h3><i class="icon">✧</i> configuration</h3>
-    <div class="grid-settings">
-      <div class="field"><label>JSON / TXT 読込</label><input id="topImportFile" type="file" accept="application/json,text/plain,.json,.txt"></div>
-      <div class="field"><label>リピート</label><input id="repeatQ" type="number" value="1"></div>
-      <div class="field"><label>解答まで(秒)</label><input id="delayA" type="number" value="3" step="0.5"></div>
-      <div class="field"><label>言語</label>
-        <select id="langHint">
-          <option value="ja-JP" selected>日本語</option>
-          <option value="en-US">English (US)</option>
-        </select>
-      </div>
-      <div class="field"><label>声</label><select id="voice"></select></div>
-      <div class="field"><label>解答表示</label>
-        <select id="showAnswer">
-          <option value="0">クイズ中のみ表示</option>
-          <option value="1">常に表示</option>
-        </select>
-      </div>
-    </div>
 
-    <!-- 直接入力エリア -->
-    <div style="margin-top: 20px;">
-      <div class="field">
-        <label>直接入力（1行に1問：質問|答え）</label>
-        <textarea id="directInput" rows="5" placeholder="例：
-太陽系で最も大きい惑星は？|木星
-光が1年間に進む距離を何という？|光年
-最も近い恒星は？|プロキシマ・ケンタウリ" style="
-          width: 100%;
-          background: rgba(0,0,0,0.3);
-          color: var(--text);
-          border: 1px solid var(--panel-border);
-          border-radius: 8px;
-          padding: 10px;
-          font-size: 13px;
-          font-family: inherit;
-          resize: vertical;
-          transition: all 0.3s;
-        "></textarea>
-      </div>
-      <div class="row" style="margin-top: 10px;">
-        <button id="loadDirectBtn" class="primary">📋 入力から読込</button>
-        <span style="font-size: 11px; color: var(--muted);">「質問|答え」形式で1行1問。区切りは | または タブ</span>
-      </div>
-    </div>
-
-    <div class="row" style="margin-top: 20px;">
-      <button id="loadSampleBtn" class="success">サンプル読込</button>
-      <button id="clearBtn">クリア</button>
-      <div style="flex-grow: 1;"></div>
-      <div class="field" style="flex-direction: row; align-items: center; gap: 10px;">
-        <label>速度</label><input id="rate" type="number" value="1" step="0.1" style="width: 60px;">
-        <label>音量</label><input id="vol" type="number" value="0.8" step="0.1" style="width: 60px;">
-      </div>
+  <!-- Now Playing Card (スマホ時に前面表示) -->
+  <section class="card" id="nowPlaying">
+    <div class="np-number" id="npNumber">— / —</div>
+    <div class="np-question" id="npQuestion">問題をロードして開始してください</div>
+    <div class="np-answer hidden" id="npAnswer">▸ —</div>
+    <div class="np-progress-bar">
+      <div class="np-progress-fill" id="npFill" style="width:0%"></div>
     </div>
   </section>
 
+  <!-- 再生コントロール (デスクトップ用 + モバイルで非表示) -->
   <section class="card">
-    <div class="row" style="margin-bottom: 20px;">
-      <button id="startBtn" class="primary">▶ PLAY START</button>
-      <button id="pauseBtn">⏸ PAUSE / RESUME</button>
-      <button id="stopBtn">⏹ STOP</button>
-      <button id="prevBtn">⏮</button>
-      <button id="nextBtn">⏭</button>
+    <div id="desktopControls">
+      <button class="btn primary" id="startBtn">▶ PLAY</button>
+      <button class="btn" id="pauseBtn">⏸ PAUSE</button>
+      <button class="btn danger" id="stopBtn">⏹ STOP</button>
+      <button class="btn" id="prevBtn">⏮ PREV</button>
+      <button class="btn" id="nextBtn">⏭ NEXT</button>
     </div>
     <progress id="prog" value="0" max="1"></progress>
-    <div id="status">Ready to explore...</div>
-    <div id="errorMsg" style="color:var(--danger); display:none; font-size:12px;"></div>
-    <div id="successMsg" style="color:var(--success); display:none; font-size:12px;"></div>
+    <div id="errorMsg"></div>
+    <div id="successMsg"></div>
   </section>
 
+  <!-- 設定 (アコーディオン) -->
   <section class="card">
-    <h3><i class="icon">✦</i> question list</h3>
+    <button class="accordion-toggle" id="settingsToggle">
+      <span>⚙ 設定</span>
+      <span class="arrow">▼</span>
+    </button>
+    <div class="accordion-body" id="settingsBody">
+      <div class="grid-settings">
+        <div class="field"><label>JSON読込</label><input id="topImportFile" type="file" accept="application/json"></div>
+        <div class="field"><label>リピート回数</label><input id="repeatQ" type="number" value="1" min="1"></div>
+        <div class="field"><label>解答まで (秒)</label><input id="delayA" type="number" value="3" step="0.5"></div>
+        <div class="field"><label>言語</label>
+          <select id="langHint">
+            <option value="ja-JP" selected>日本語</option>
+            <option value="en-US">English (US)</option>
+          </select>
+        </div>
+        <div class="field"><label>声</label><select id="voice"></select></div>
+        <div class="field"><label>解答表示</label>
+          <select id="showAnswer">
+            <option value="0">クイズ中のみ</option>
+            <option value="1">常に表示</option>
+          </select>
+        </div>
+        <div class="field"><label>速度</label><input id="rate" type="number" value="1" step="0.1" min="0.5" max="3"></div>
+        <div class="field"><label>音量</label><input id="vol" type="number" value="0.8" step="0.1" min="0" max="1"></div>
+      </div>
+
+      <div class="field" style="margin-bottom:10px;">
+        <label>直接入力（質問|答え　1行1問）</label>
+        <textarea id="directInput" rows="4" placeholder="太陽系で最も大きい惑星は？|木星
+光が1年間に進む距離を何という？|光年
+最も近い恒星は？|プロキシマ・ケンタウリ"></textarea>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn primary" id="loadDirectBtn">📋 入力から読込</button>
+        <button class="btn success" id="loadSampleBtn">サンプル</button>
+        <button class="btn" id="clearBtn">クリア</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 問題リスト -->
+  <section class="card">
+    <h3>✦ 問題リスト</h3>
     <div id="list" class="list"></div>
-    <div class="row" style="margin-top: 15px; font-size: 11px; color: var(--muted);">
+    <div class="hint-row">
       <span>⌨ <span class="kbd">Space</span> 再生/停止</span>
       <span><span class="kbd">←/→</span> 前/次</span>
-      <span><span class="kbd">A</span> 表示切替</span>
     </div>
   </section>
 </main>
 
+<!-- ─── MOBILE BOTTOM PLAYER BAR ─── -->
+<div id="playerBar">
+  <div class="player-progress">
+    <span id="pbIdx">0</span>/<span id="pbTotal">0</span>
+    <div class="player-prog-track">
+      <div class="player-prog-fill" id="pbFill" style="width:0%"></div>
+    </div>
+  </div>
+  <div class="player-controls">
+    <button class="ctrl-btn" id="mb-stop" title="停止">⏹</button>
+    <button class="ctrl-btn" id="mb-prev" title="前へ">⏮</button>
+    <button class="ctrl-btn play-main" id="mb-play" title="再生">▶</button>
+    <button class="ctrl-btn" id="mb-next" title="次へ">⏭</button>
+    <button class="ctrl-btn" id="mb-reveal" title="答えを表示" style="font-size:16px;">👁</button>
+  </div>
+</div>
+
 <script>
-// --- [JavaScript部分は元のロジックを完全継承、一部UI更新用に関数のみ調整] ---
 'use strict';
 
-// 隠し設定（UIから省いたもの）
 const gapQ = { value: 0.5 };
 const gapAfterA = { value: 0.5 };
 const pitch = { value: 1 };
@@ -342,7 +589,7 @@ let currentTimeout = null;
 let revealAnswerForCurrent = false;
 let revealedAnswerIdxSet = new Set();
 
-const elements = {
+const el = {
   clearBtn: document.getElementById('clearBtn'),
   loadSampleBtn: document.getElementById('loadSampleBtn'),
   startBtn: document.getElementById('startBtn'),
@@ -362,27 +609,82 @@ const elements = {
   showAnswerSel: document.getElementById('showAnswer'),
   list: document.getElementById('list'),
   errorMsg: document.getElementById('errorMsg'),
-  successMsg: document.getElementById('successMsg')
+  successMsg: document.getElementById('successMsg'),
+  // Now playing
+  nowPlaying: document.getElementById('nowPlaying'),
+  npNumber: document.getElementById('npNumber'),
+  npQuestion: document.getElementById('npQuestion'),
+  npAnswer: document.getElementById('npAnswer'),
+  npFill: document.getElementById('npFill'),
+  // Mobile bar
+  pbIdx: document.getElementById('pbIdx'),
+  pbTotal: document.getElementById('pbTotal'),
+  pbFill: document.getElementById('pbFill'),
+  mbPlay: document.getElementById('mb-play'),
+  mbStop: document.getElementById('mb-stop'),
+  mbPrev: document.getElementById('mb-prev'),
+  mbNext: document.getElementById('mb-next'),
+  mbReveal: document.getElementById('mb-reveal'),
 };
 
-function updateStatus(msg) { elements.status.textContent = msg; }
-function updateProgress() { elements.prog.value = (idx >= 0 && items.length) ? (idx + 1) / items.length : 0; }
-function showError(m) { elements.errorMsg.textContent = m; elements.errorMsg.style.display='block'; setTimeout(()=>elements.errorMsg.style.display='none', 5000); }
-function showSuccess(m) { elements.successMsg.textContent = m; elements.successMsg.style.display='block'; setTimeout(()=>elements.successMsg.style.display='none', 3000); }
+function updateStatus(msg) { el.status.textContent = msg; }
+
+function updateProgress() {
+  const val = (idx >= 0 && items.length) ? (idx + 1) / items.length : 0;
+  el.prog.value = val;
+  el.pbFill.style.width = (val * 100) + '%';
+  el.npFill.style.width = (val * 100) + '%';
+  el.pbIdx.textContent = idx >= 0 ? idx + 1 : 0;
+  el.pbTotal.textContent = items.length;
+  el.npNumber.textContent = items.length ? `${idx + 1} / ${items.length}` : '— / —';
+}
+
+function showError(m) { el.errorMsg.textContent = m; el.errorMsg.style.display='block'; setTimeout(()=>el.errorMsg.style.display='none', 5000); }
+function showSuccess(m) { el.successMsg.textContent = m; el.successMsg.style.display='block'; setTimeout(()=>el.successMsg.style.display='none', 3000); }
+
+function updateNowPlaying() {
+  if (!items.length || idx < 0) {
+    el.nowPlaying.classList.remove('visible');
+    return;
+  }
+  el.nowPlaying.classList.add('visible');
+  const it = items[idx];
+  el.npQuestion.textContent = it ? it.q : '';
+  const alwaysShow = el.showAnswerSel.value === '1';
+  const showAns = alwaysShow || revealedAnswerIdxSet.has(idx) || (playing && idx >= 0 && revealAnswerForCurrent);
+  if (showAns && it) {
+    el.npAnswer.textContent = '▸ ' + it.a;
+    el.npAnswer.classList.remove('hidden');
+  } else {
+    el.npAnswer.textContent = '▸ ?';
+    el.npAnswer.classList.add('hidden');
+  }
+}
+
+function updateMobilePlayBtn() {
+  if (playing && !paused) {
+    el.mbPlay.textContent = '⏸';
+    el.mbPlay.title = '一時停止';
+  } else {
+    el.mbPlay.textContent = '▶';
+    el.mbPlay.title = '再生';
+  }
+}
 
 function loadVoices() {
   const voices = speechSynthesis.getVoices();
-  const hint = elements.langHint.value;
-  elements.voiceSel.innerHTML = '';
+  const hint = el.langHint.value;
+  el.voiceSel.innerHTML = '';
   const filtered = voices.filter(v => v.lang.startsWith(hint.substring(0, 2)));
   (filtered.length ? filtered : voices).forEach(v => {
     const opt = document.createElement('option');
     opt.value = v.name; opt.textContent = `${v.name} (${v.lang})`;
-    elements.voiceSel.appendChild(opt);
+    el.voiceSel.appendChild(opt);
   });
 }
+
 speechSynthesis.addEventListener('voiceschanged', loadVoices);
-elements.langHint.addEventListener('change', loadVoices);
+el.langHint.addEventListener('change', loadVoices);
 
 function hardStop() {
   playSessionId++;
@@ -396,10 +698,10 @@ async function speakText(text, sessionAtStart) {
     if (sessionAtStart !== playSessionId || !playing) return resolve();
     const u = new SpeechSynthesisUtterance(String(text || ''));
     const voices = speechSynthesis.getVoices();
-    u.voice = voices.find(v => v.name === elements.voiceSel.value) || null;
-    u.volume = parseFloat(elements.vol.value);
-    u.rate = parseFloat(elements.rate.value);
-    u.lang = elements.langHint.value;
+    u.voice = voices.find(v => v.name === el.voiceSel.value) || null;
+    u.volume = parseFloat(el.vol.value);
+    u.rate = parseFloat(el.rate.value);
+    u.lang = el.langHint.value;
     u.onend = resolve;
     u.onerror = resolve;
     speechSynthesis.speak(u);
@@ -411,15 +713,21 @@ function sleep(ms) {
 }
 
 function renderList() {
-  elements.list.innerHTML = '';
-  const alwaysShow = elements.showAnswerSel.value === '1';
+  el.list.innerHTML = '';
+  const alwaysShow = el.showAnswerSel.value === '1';
   items.forEach((it, i) => {
     const row = document.createElement('div');
     row.className = `item ${i === idx ? 'active' : ''}`;
     row.dataset.idx = i;
 
+    const num = document.createElement('div');
+    num.className = 'item-num';
+    num.textContent = `#${i+1}`;
+    row.appendChild(num);
+
     const content = document.createElement('div');
-    const qDiv = document.createElement('div'); qDiv.className = 'q'; qDiv.textContent = `#${i+1} ${it.q}`;
+    content.style.flex = '1';
+    const qDiv = document.createElement('div'); qDiv.className = 'q'; qDiv.textContent = it.q;
     content.appendChild(qDiv);
 
     if (alwaysShow || revealedAnswerIdxSet.has(i) || (playing && i === idx && revealAnswerForCurrent)) {
@@ -427,46 +735,127 @@ function renderList() {
       content.appendChild(aDiv);
     }
     row.appendChild(content);
-    elements.list.appendChild(row);
+    el.list.appendChild(row);
   });
+  updateNowPlaying();
+  updateProgress();
 }
 
 async function playLoop(sessionAtStart) {
   while (sessionAtStart === playSessionId && playing) {
     if (idx < 0 || idx >= items.length) {
-      playing = false; updateStatus('Discovery Complete'); renderList(); return;
+      playing = false; updateStatus('Discovery Complete'); updateMobilePlayBtn(); renderList(); return;
     }
     const it = items[idx];
     revealAnswerForCurrent = false;
     renderList();
     updateProgress();
-    elements.list.children[idx]?.scrollIntoView({behavior:'smooth', block:'center'});
+    el.list.children[idx]?.scrollIntoView({behavior:'smooth', block:'center'});
     updateStatus(`Exploring #${idx + 1}...`);
+    updateMobilePlayBtn();
 
-    for (let r = 0; r < parseInt(elements.repeatQ.value); r++) {
+    for (let r = 0; r < parseInt(el.repeatQ.value); r++) {
       if (sessionAtStart !== playSessionId) return;
       await speakText(it.q, sessionAtStart);
       await sleep(500);
     }
 
-    await sleep(parseFloat(elements.delayA.value) * 1000);
+    await sleep(parseFloat(el.delayA.value) * 1000);
     if (sessionAtStart !== playSessionId) return;
 
     revealAnswerForCurrent = true;
     revealedAnswerIdxSet.add(idx);
     renderList();
+    updateNowPlaying();
 
     await speakText(it.a, sessionAtStart);
     await sleep(500);
 
     idx++;
-    if (idx >= items.length) { playing = false; updateStatus('Voyage End'); renderList(); return; }
+    if (idx >= items.length) { playing = false; updateStatus('Voyage End'); updateMobilePlayBtn(); renderList(); return; }
   }
 }
 
-elements.loadSampleBtn.onclick = () => { loadDataFromJSON(SAMPLE_DATA); showSuccess('Sample loaded'); };
+// ─── Button handlers ───
+function doStart() {
+  if(!items.length) return;
+  hardStop(); idx=0; playing=true; paused=false;
+  updateMobilePlayBtn(); startNoteLoop(); playLoop(playSessionId);
+}
 
-// 直接入力から読込
+function doPause() {
+  if (paused) {
+    hardStop(); playing=true; paused=false;
+    startNoteLoop(); playLoop(playSessionId);
+  } else if (playing) {
+    hardStop(); playing=false; paused=true;
+    startNoteLoop(); updateStatus('Paused');
+    renderList();
+  }
+  updateMobilePlayBtn();
+}
+
+function doStop() {
+  hardStop(); playing=false; paused=false; idx=-1;
+  renderList(); updateProgress(); updateStatus('Stopped');
+  startNoteLoop(); updateMobilePlayBtn();
+  el.nowPlaying.classList.remove('visible');
+}
+
+function doNext() {
+  if(!items.length) return;
+  hardStop(); idx=Math.min(items.length-1, Math.max(0,idx)+1);
+  playing=true; paused=false;
+  startNoteLoop(); updateMobilePlayBtn(); playLoop(playSessionId);
+}
+
+function doPrev() {
+  if(!items.length) return;
+  hardStop(); idx=Math.max(0, idx-1);
+  playing=true; paused=false;
+  startNoteLoop(); updateMobilePlayBtn(); playLoop(playSessionId);
+}
+
+// Desktop buttons
+el.startBtn.onclick = doStart;
+el.pauseBtn.onclick = doPause;
+el.stopBtn.onclick = doStop;
+el.nextBtn.onclick = doNext;
+el.prevBtn.onclick = doPrev;
+
+// Mobile bar buttons
+el.mbPlay.onclick = () => {
+  if (!playing && !paused) doStart();
+  else doPause();
+};
+el.mbStop.onclick = doStop;
+el.mbNext.onclick = doNext;
+el.mbPrev.onclick = doPrev;
+el.mbReveal.onclick = () => {
+  if (idx < 0 || !items.length) return;
+  revealAnswerForCurrent = true;
+  revealedAnswerIdxSet.add(idx);
+  renderList();
+};
+
+// List click
+el.list.onclick = (e) => {
+  const row = e.target.closest('.item');
+  if(!row) return;
+  hardStop(); idx = parseInt(row.dataset.idx); playing=true; paused=false;
+  startNoteLoop(); updateMobilePlayBtn(); playLoop(playSessionId);
+};
+
+// Load handlers
+el.loadSampleBtn.onclick = () => { loadDataFromJSON(SAMPLE_DATA); showSuccess('サンプルを読み込みました'); };
+
+el.clearBtn.onclick = () => {
+  hardStop(); items=[]; idx=-1; revealedAnswerIdxSet=new Set();
+  renderList(); updateProgress(); updateStatus('Ready...');
+  el.nowPlaying.classList.remove('visible');
+  updateMobilePlayBtn();
+};
+
 document.getElementById('loadDirectBtn').onclick = () => {
   const raw = document.getElementById('directInput').value.trim();
   if (!raw) { showError('テキストが入力されていません'); return; }
@@ -485,19 +874,13 @@ document.getElementById('loadDirectBtn').onclick = () => {
   loadDataFromJSON({ version: 1, items: parsed });
   showSuccess(`${parsed.length}問 読み込みました！`);
 };
-elements.startBtn.onclick = () => { if(!items.length) return; hardStop(); idx=0; playing=true; startNoteLoop(); playLoop(playSessionId); };
-elements.pauseBtn.onclick = () => {
-  if (paused) { hardStop(); playing=true; paused=false; startNoteLoop(); playLoop(playSessionId); }
-  else if (playing) { hardStop(); playing=false; paused=true; startNoteLoop(); updateStatus('Paused'); renderList(); }
-};
-elements.stopBtn.onclick = () => { hardStop(); playing=false; paused=false; idx=-1; renderList(); updateProgress(); updateStatus('Stopped'); startNoteLoop(); };
-elements.nextBtn.onclick = () => { if(!items.length) return; hardStop(); idx=Math.min(items.length-1, idx+1); playing=true; startNoteLoop(); playLoop(playSessionId); };
-elements.prevBtn.onclick = () => { if(!items.length) return; hardStop(); idx=Math.max(0, idx-1); playing=true; startNoteLoop(); playLoop(playSessionId); };
 
-elements.list.onclick = (e) => {
-  const row = e.target.closest('.item');
-  if(!row) return;
-  hardStop(); idx = parseInt(row.dataset.idx); playing=true; startNoteLoop(); playLoop(playSessionId);
+el.topImportFile.onchange = (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => { loadDataFromJSON(JSON.parse(reader.result)); showSuccess('JSON Loaded'); };
+  reader.readAsText(file);
 };
 
 function loadDataFromJSON(data) {
@@ -505,98 +888,54 @@ function loadDataFromJSON(data) {
   items = data.items || [];
   revealedAnswerIdxSet = new Set();
   idx = items.length ? 0 : -1;
-  renderList();
-  updateProgress();
-  loadVoices();
-  startNoteLoop();
+  renderList(); updateProgress(); loadVoices(); startNoteLoop();
+  updateMobilePlayBtn();
+  if (items.length) el.nowPlaying.classList.add('visible');
 }
 
-elements.topImportFile.onchange = (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = () => {
-    const content = reader.result;
-    if (file.name.endsWith('.txt') || file.type === 'text/plain') {
-      // テキストファイル：質問|答え 形式で解析
-      const lines = content.split('\n').map(l => l.trim()).filter(Boolean);
-      const parsed = [];
-      for (const line of lines) {
-        const sep = line.includes('\t') ? '\t' : '|';
-        const parts = line.split(sep);
-        if (parts.length >= 2) {
-          const q = parts[0].trim();
-          const a = parts.slice(1).join(sep).trim();
-          if (q && a) parsed.push({ q, a });
-        }
-      }
-      if (!parsed.length) { showError('有効なQ&Aが見つかりません。「質問|答え」形式で記述してください。'); return; }
-      loadDataFromJSON({ version: 1, items: parsed });
-      showSuccess(`${parsed.length}問 読み込みました！`);
-    } else {
-      // JSONファイル
-      try {
-        loadDataFromJSON(JSON.parse(content));
-        showSuccess('JSON Loaded');
-      } catch {
-        showError('JSONの解析に失敗しました。');
-      }
-    }
-  };
-  reader.readAsText(file);
+// Settings accordion
+document.getElementById('settingsToggle').onclick = function() {
+  this.classList.toggle('open');
+  document.getElementById('settingsBody').classList.toggle('open');
 };
 
+// Keyboard shortcuts
 window.addEventListener('keydown', (e) => {
-  if (['INPUT','SELECT'].includes(document.activeElement.tagName)) return;
-  if (e.code === 'Space') { e.preventDefault(); elements.pauseBtn.click(); }
-  if (e.key === 'ArrowRight') elements.nextBtn.click();
-  if (e.key === 'ArrowLeft') elements.prevBtn.click();
+  if (['INPUT','SELECT','TEXTAREA'].includes(document.activeElement.tagName)) return;
+  if (e.code === 'Space') { e.preventDefault(); doPause(); }
+  if (e.key === 'ArrowRight') doNext();
+  if (e.key === 'ArrowLeft') doPrev();
 });
 
-/* =========================
-   背景：ライムグリーン音符
-   ========================= */
+/* ─── Floating Notes Background ─── */
 const bgNotesEl = document.getElementById('bg-notes');
-const noteSymbols = ['♪', '♫', '♬', '♩'];
+const noteSymbols = ['♪','♫','♬','♩'];
 
 function createFloatingNote() {
   const note = document.createElement('div');
   note.className = 'floating-note';
   note.textContent = noteSymbols[(Math.random() * noteSymbols.length) | 0];
-
   const x = Math.random() * window.innerWidth;
   note.style.left = `${x}px`;
-
-  const duration = 5 + Math.random() * 5;          // 5〜10秒
-  const size = 12 + Math.random() * 18;            // 12〜30px
-  const drift = (Math.random() * 120 - 60).toFixed(0) + 'px'; // 横揺れ
+  const duration = 5 + Math.random() * 5;
+  const size = 12 + Math.random() * 18;
+  const drift = (Math.random() * 120 - 60).toFixed(0) + 'px';
   note.style.fontSize = `${size}px`;
   note.style.animationDuration = `${duration}s`;
   note.style.opacity = (0.25 + Math.random() * 0.55).toFixed(2);
   note.style.setProperty('--drift', drift);
-
   bgNotesEl.appendChild(note);
-
   setTimeout(() => note.remove(), duration * 1000);
 }
 
-/* =========================
-   背景音符：状況依存の出現間隔（再生中だけ少し減らす）
-   ========================= */
 let noteTimer = null;
-
 function startNoteLoop() {
   if (noteTimer) clearInterval(noteTimer);
-
-  // 再生中は少しだけ控えめ（邪魔しない）
   const interval = playing ? 700 : 520;
-
   noteTimer = setInterval(createFloatingNote, interval);
 }
 
-// 初期状態（停止中）
 startNoteLoop();
-
 loadVoices();
 </script>
 </body>
