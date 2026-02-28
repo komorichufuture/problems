@@ -139,7 +139,7 @@
     transition: all 0.3s;
   }
 
-  input:focus, select:focus {
+  input:focus, select:focus, textarea:focus {
     border-color: var(--accent);
     box-shadow: 0 0 8px var(--accent-glow);
     outline: none;
@@ -233,7 +233,7 @@
   <section class="card">
     <h3><i class="icon">✧</i> configuration</h3>
     <div class="grid-settings">
-      <div class="field"><label>JSON読込</label><input id="topImportFile" type="file" accept="application/json"></div>
+      <div class="field"><label>JSON / TXT 読込</label><input id="topImportFile" type="file" accept="application/json,text/plain,.json,.txt"></div>
       <div class="field"><label>リピート</label><input id="repeatQ" type="number" value="1"></div>
       <div class="field"><label>解答まで(秒)</label><input id="delayA" type="number" value="3" step="0.5"></div>
       <div class="field"><label>言語</label>
@@ -248,6 +248,32 @@
           <option value="0">クイズ中のみ表示</option>
           <option value="1">常に表示</option>
         </select>
+      </div>
+    </div>
+
+    <!-- 直接入力エリア -->
+    <div style="margin-top: 20px;">
+      <div class="field">
+        <label>直接入力（1行に1問：質問|答え）</label>
+        <textarea id="directInput" rows="5" placeholder="例：
+太陽系で最も大きい惑星は？|木星
+光が1年間に進む距離を何という？|光年
+最も近い恒星は？|プロキシマ・ケンタウリ" style="
+          width: 100%;
+          background: rgba(0,0,0,0.3);
+          color: var(--text);
+          border: 1px solid var(--panel-border);
+          border-radius: 8px;
+          padding: 10px;
+          font-size: 13px;
+          font-family: inherit;
+          resize: vertical;
+          transition: all 0.3s;
+        "></textarea>
+      </div>
+      <div class="row" style="margin-top: 10px;">
+        <button id="loadDirectBtn" class="primary">📋 入力から読込</button>
+        <span style="font-size: 11px; color: var(--muted);">「質問|答え」形式で1行1問。区切りは | または タブ</span>
       </div>
     </div>
 
@@ -439,6 +465,26 @@ async function playLoop(sessionAtStart) {
 }
 
 elements.loadSampleBtn.onclick = () => { loadDataFromJSON(SAMPLE_DATA); showSuccess('Sample loaded'); };
+
+// 直接入力から読込
+document.getElementById('loadDirectBtn').onclick = () => {
+  const raw = document.getElementById('directInput').value.trim();
+  if (!raw) { showError('テキストが入力されていません'); return; }
+  const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+  const parsed = [];
+  for (const line of lines) {
+    const sep = line.includes('\t') ? '\t' : '|';
+    const parts = line.split(sep);
+    if (parts.length >= 2) {
+      const q = parts[0].trim();
+      const a = parts.slice(1).join(sep).trim();
+      if (q && a) parsed.push({ q, a });
+    }
+  }
+  if (!parsed.length) { showError('有効なQ&Aが見つかりません。「質問|答え」形式で入力してください。'); return; }
+  loadDataFromJSON({ version: 1, items: parsed });
+  showSuccess(`${parsed.length}問 読み込みました！`);
+};
 elements.startBtn.onclick = () => { if(!items.length) return; hardStop(); idx=0; playing=true; startNoteLoop(); playLoop(playSessionId); };
 elements.pauseBtn.onclick = () => {
   if (paused) { hardStop(); playing=true; paused=false; startNoteLoop(); playLoop(playSessionId); }
@@ -469,7 +515,34 @@ elements.topImportFile.onchange = (e) => {
   const file = e.target.files[0];
   if (!file) return;
   const reader = new FileReader();
-  reader.onload = () => { loadDataFromJSON(JSON.parse(reader.result)); showSuccess('JSON Loaded'); };
+  reader.onload = () => {
+    const content = reader.result;
+    if (file.name.endsWith('.txt') || file.type === 'text/plain') {
+      // テキストファイル：質問|答え 形式で解析
+      const lines = content.split('\n').map(l => l.trim()).filter(Boolean);
+      const parsed = [];
+      for (const line of lines) {
+        const sep = line.includes('\t') ? '\t' : '|';
+        const parts = line.split(sep);
+        if (parts.length >= 2) {
+          const q = parts[0].trim();
+          const a = parts.slice(1).join(sep).trim();
+          if (q && a) parsed.push({ q, a });
+        }
+      }
+      if (!parsed.length) { showError('有効なQ&Aが見つかりません。「質問|答え」形式で記述してください。'); return; }
+      loadDataFromJSON({ version: 1, items: parsed });
+      showSuccess(`${parsed.length}問 読み込みました！`);
+    } else {
+      // JSONファイル
+      try {
+        loadDataFromJSON(JSON.parse(content));
+        showSuccess('JSON Loaded');
+      } catch {
+        showError('JSONの解析に失敗しました。');
+      }
+    }
+  };
   reader.readAsText(file);
 };
 
