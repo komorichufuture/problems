@@ -273,27 +273,27 @@
 <div id="bg-notes" aria-hidden="true"></div>
 
 <header>
-  <h1>Starry Quiz TTS</h1>
+  <h1 id="appTitle">Starry Quiz TTS</h1>
 </header>
 
 <main class="wrap">
   <section class="card">
-    <h3><i class="icon">✧</i> configuration</h3>
+    <h3><i class="icon">✧</i> <span id="configHeading">configuration</span></h3>
     <div class="grid-settings">
-      <div class="field"><label>JSON / TXT 読込</label><input id="topImportFile" type="file" accept="application/json,text/plain,.json,.txt"></div>
-      <div class="field"><label>リピート</label><input id="repeatQ" type="number" value="1"></div>
-      <div class="field"><label>解答まで(秒)</label><input id="delayA" type="number" value="3" step="0.5"></div>
-      <div class="field"><label>言語</label>
+      <div class="field"><label id="labelImport">JSON / TXT 読込</label><input id="topImportFile" type="file" accept="application/json,text/plain,.json,.txt"></div>
+      <div class="field"><label id="labelRepeat">リピート</label><input id="repeatQ" type="number" value="1"></div>
+      <div class="field"><label id="labelDelay">解答まで(秒)</label><input id="delayA" type="number" value="3" step="0.5"></div>
+      <div class="field"><label id="labelLanguage">言語</label>
         <select id="langHint">
           <option value="ja-JP" selected>日本語</option>
           <option value="en-US">English (US)</option>
         </select>
       </div>
-      <div class="field"><label>声</label><select id="voice"></select></div>
-      <div class="field"><label>解答表示</label>
+      <div class="field"><label id="labelVoice">声</label><select id="voice"></select></div>
+      <div class="field"><label id="labelShowAnswer">解答表示</label>
         <select id="showAnswer">
-          <option value="0">クイズ中のみ表示</option>
-          <option value="1">常に表示</option>
+          <option value="0" id="showAnswerOption0">クイズ中のみ表示</option>
+          <option value="1" id="showAnswerOption1">常に表示</option>
         </select>
       </div>
     </div>
@@ -301,7 +301,7 @@
     <!-- 直接入力エリア -->
     <div style="margin-top: 20px;">
       <div class="field">
-        <label>直接入力（1行に1問：質問|答え）</label>
+        <label id="labelDirectInput">直接入力（1行に1問：質問|答え）</label>
         <textarea id="directInput" rows="5" placeholder="例：
 太陽系で最も大きい惑星は？|木星
 光が1年間に進む距離を何という？|光年
@@ -320,7 +320,7 @@
       </div>
       <div class="row" style="margin-top: 10px;">
         <button id="loadDirectBtn" class="primary">📋 入力から読込</button>
-        <span style="font-size: 11px; color: var(--muted);">「質問|答え」形式で1行1問。区切りは | または タブ</span>
+        <span id="directHelp" style="font-size: 11px; color: var(--muted);">「質問|答え」形式で1行1問。区切りは | または タブ</span>
       </div>
     </div>
 
@@ -328,8 +328,8 @@
       <button id="clearBtn">クリア</button>
       <div style="flex-grow: 1;"></div>
       <div class="field" style="flex-direction: row; align-items: center; gap: 10px;">
-        <label>速度</label><input id="rate" type="number" value="1" step="0.1" style="width: 60px;">
-        <label>音量</label><input id="vol" type="number" value="0.8" step="0.1" style="width: 60px;">
+        <label id="labelRate">速度</label><input id="rate" type="number" value="1" step="0.1" style="width: 60px;">
+        <label id="labelVolume">音量</label><input id="vol" type="number" value="0.8" step="0.1" style="width: 60px;">
       </div>
     </div>
   </section>
@@ -349,12 +349,12 @@
   </section>
 
   <section class="card">
-    <h3><i class="icon">✦</i> question list</h3>
+    <h3><i class="icon">✦</i> <span id="questionListHeading">question list</span></h3>
     <div id="list" class="list"></div>
     <div class="row" style="margin-top: 15px; font-size: 11px; color: var(--muted);">
-      <span>⌨ <span class="kbd">Space</span> 再生/停止</span>
-      <span><span class="kbd">←/→</span> 前/次</span>
-      <span><span class="kbd">A</span> 表示切替</span>
+      <span id="kbdSpaceHint">⌨ <span class="kbd">Space</span> 再生/停止</span>
+      <span id="kbdArrowHint"><span class="kbd">←/→</span> 前/次</span>
+      <span id="kbdAHint"><span class="kbd">A</span> 表示切替</span>
     </div>
   </section>
 </main>
@@ -364,7 +364,148 @@
 'use strict';
 
 
-const EMBEDDED_DATA = {"version": 1, "items": [{"q": "メルトで使用された音声ライブラリは？", "a": "初音ミク"}, {"q": "炉心融解で使用された音声ライブラリは？", "a": "鏡音リン"}, {"q": "magnetで使用された音声ライブラリは？", "a": "初音ミク・巡音ルカ"}, {"q": "Just Be Friendsで使用された音声ライブラリは？", "a": "巡音ルカ"}, {"q": "悪ノ娘で使用された音声ライブラリは？", "a": "鏡音リン"}, {"q": "悪ノ召使で使用された音声ライブラリは？", "a": "鏡音レン"}, {"q": "天ノ弱で使用された音声ライブラリは？", "a": "GUMI"}, {"q": "モザイクロールで使用された音声ライブラリは？", "a": "GUMI"}, {"q": "六兆年と一夜物語で使用された音声ライブラリは？", "a": "IA"}, {"q": "ロストワンの号哭で使用された音声ライブラリは？", "a": "鏡音リン"}, {"q": "いーあるふぁんくらぶで使用された音声ライブラリは？", "a": "GUMI"}, {"q": "ドーナツホールで使用された音声ライブラリは？", "a": "GUMI"}, {"q": "深海少女で使用された音声ライブラリは？", "a": "初音ミク"}, {"q": "千本桜で使用された音声ライブラリは？", "a": "初音ミク"}, {"q": "ブリキノダンスで使用された音声ライブラリは？", "a": "初音ミク"}, {"q": "妄想税で使用された音声ライブラリは？", "a": "初音ミク"}, {"q": "ECHOで使用された音声ライブラリは？", "a": "GUMI"}, {"q": "威風堂々で使用された音声ライブラリは？", "a": "巡音ルカ"}, {"q": "ネコミミアーカイブで使用された音声ライブラリは？", "a": "GUMI"}, {"q": "心拍数♯0822で使用された音声ライブラリは？", "a": "初音ミク"}, {"q": "glowで使用された音声ライブラリは？", "a": "初音ミク"}, {"q": "カゲロウデイズで使用された音声ライブラリは？", "a": "IA"}, {"q": "アウターサイエンスで使用された音声ライブラリは？", "a": "IA"}, {"q": "とある一家の御茶会議で使用された音声ライブラリは？", "a": "GUMI"}, {"q": "魔法使いの弟子で使用された音声ライブラリは？", "a": "GUMI"}, {"q": "メルトの投稿年は？", "a": "2007年"}, {"q": "炉心融解の投稿年は？", "a": "2008年"}, {"q": "裏表ラバーズの投稿年は？", "a": "2009年"}, {"q": "ワールズエンド・ダンスホールの投稿年は？", "a": "2010年"}, {"q": "マトリョシカの投稿年は？", "a": "2010年"}, {"q": "千本桜の投稿年は？", "a": "2011年"}, {"q": "カゲロウデイズの投稿年は？", "a": "2011年"}, {"q": "六兆年と一夜物語の投稿年は？", "a": "2012年"}, {"q": "脳漿炸裂ガールの投稿年は？", "a": "2012年"}, {"q": "ロストワンの号哭の投稿年は？", "a": "2013年"}, {"q": "ドーナツホールの投稿年は？", "a": "2013年"}, {"q": "ブリキノダンスの投稿年は？", "a": "2013年"}, {"q": "透明エレジーの投稿年は？", "a": "2013年"}, {"q": "妄想税の投稿年は？", "a": "2014年"}, {"q": "恋愛裁判の投稿年は？", "a": "2014年"}, {"q": "ELECTの投稿年は？", "a": "2014年"}, {"q": "いーあるふぁんくらぶの投稿年は？", "a": "2012年"}, {"q": "天ノ弱の投稿年は？", "a": "2011年"}, {"q": "深海少女の投稿年は？", "a": "2010年"}, {"q": "心拍数♯0822の投稿年は？", "a": "2011年"}, {"q": "ネコミミアーカイブの投稿年は？", "a": "2011年"}, {"q": "威風堂々の投稿年は？", "a": "2012年"}, {"q": "インビジブルの投稿年は？", "a": "2011年"}, {"q": "悪ノ娘の投稿年は？", "a": "2008年"}, {"q": "ココロの投稿年は？", "a": "2008年"}, {"q": "初音ミクの消失の投稿時設定BPMは？", "a": "240"}, {"q": "ワールズエンド・ダンスホールの投稿時設定BPMは？", "a": "171"}, {"q": "ロストワンの号哭の投稿時設定BPMは？", "a": "162"}, {"q": "千本桜の投稿時設定BPMは？", "a": "154"}, {"q": "六兆年と一夜物語の投稿時設定BPMは？", "a": "186"}, {"q": "ブリキノダンスの投稿時設定BPMは？", "a": "172"}, {"q": "透明エレジーの投稿時設定BPMは？", "a": "220"}, {"q": "妄想税の投稿時設定BPMは？", "a": "134"}, {"q": "天樂の投稿時設定BPMは？", "a": "232"}, {"q": "脳漿炸裂ガールの投稿時設定BPMは？", "a": "155"}, {"q": "ドーナツホールのメインパートの基本拍子は？", "a": "4/4"}, {"q": "悪ノ娘のメインパートの基本拍子は？", "a": "4/4"}, {"q": "メルトのメインパートの基本拍子は？", "a": "4/4"}, {"q": "glowのメインパートの基本拍子は？", "a": "4/4"}, {"q": "ECHOのメインパートの基本拍子は？", "a": "4/4"}, {"q": "メルトと炉心融解でニコニコ動画で先に投稿されたのは？", "a": "メルト"}, {"q": "千本桜と六兆年と一夜物語でニコニコ動画で先に投稿されたのは？", "a": "千本桜"}, {"q": "ロストワンの号哭とブリキノダンスでニコニコ動画で先に投稿されたのは？", "a": "ロストワンの号哭"}, {"q": "マトリョシカとワールズエンド・ダンスホールでニコニコ動画で先に投稿されたのは？", "a": "ワールズエンド・ダンスホール"}, {"q": "妄想税と恋愛裁判でニコニコ動画で先に投稿されたのは？", "a": "妄想税"}, {"q": "IAを使用している曲はどれか", "a": "カゲロウデイズ", "choices": ["千本桜", "カゲロウデイズ", "メルト"]}, {"q": "巡音ルカ単独歌唱はどれか", "a": "Just Be Friends", "choices": ["magnet", "Just Be Friends", "悪ノ娘"]}, {"q": "GUMIを使用していない曲はどれか", "a": "千本桜", "choices": ["モザイクロール", "天ノ弱", "千本桜"]}, {"q": "鏡音リンを使用している曲はどれか", "a": "炉心融解", "choices": ["炉心融解", "ECHO", "深海少女"]}, {"q": "IAを使用していない曲はどれか", "a": "千本桜", "choices": ["六兆年と一夜物語", "アウターサイエンス", "千本桜"]}, {"q": "初投稿時にVOCALOID3世代音源を使用した曲は？", "a": "六兆年", "choices": ["六兆年", "メルト", "悪ノ娘"]}, {"q": "初投稿時にVOCALOID2世代音源の曲は？", "a": "メルト", "choices": ["メルト", "妄想税", "ECHO"]}, {"q": "初投稿時にV3音源のIAを使用した曲は？", "a": "六兆年と一夜物語", "choices": ["六兆年と一夜物語", "メルト", "千本桜"]}, {"q": "初投稿時にV2世代音源の初音ミクを使用した曲は？", "a": "メルト", "choices": ["メルト", "千本桜", "天ノ弱"]}, {"q": "初投稿時にV3世代音源のGUMIを使用した曲は？", "a": "ドーナツホール", "choices": ["ドーナツホール", "千本桜", "六兆年と一夜物語"]}, {"q": "メルトの作曲者は？", "a": "ryo"}, {"q": "炉心融解の作曲者は？", "a": "iroha"}, {"q": "裏表ラバーズの作曲者は？", "a": "wowaka"}, {"q": "マトリョシカの作曲者は？", "a": "ハチ"}, {"q": "千本桜の作曲者は？", "a": "黒うさP"}, {"q": "六兆年と一夜物語の作曲者は？", "a": "kemu"}, {"q": "ロストワンの号哭の作曲者は？", "a": "Neru"}, {"q": "妄想税の作曲者は？", "a": "DECO*27"}, {"q": "ブリキノダンスの作曲者は？", "a": "日向電工"}, {"q": "ECHOの作曲者は？", "a": "Crusher-P"}, {"q": "天ノ弱の作曲者は？", "a": "164"}, {"q": "いーあるふぁんくらぶの作曲者は？", "a": "みきとP"}, {"q": "ネコミミアーカイブの作曲者は？", "a": "糞田舎P"}, {"q": "glowの作曲者は？", "a": "keeno"}, {"q": "心拍数♯0822の作曲者は？", "a": "蝶々P"}, {"q": "カゲロウデイズの作曲者は？", "a": "じん"}, {"q": "インビジブルの作曲者は？", "a": "kemu"}, {"q": "悪ノ娘の作曲者は？", "a": "mothy"}, {"q": "とある一家の御茶会議の作曲者は？", "a": "くるりんご"}, {"q": "魔法使いの弟子の作曲者は？", "a": "くるりんご"}]};
+const I18N = {
+  ja: {
+    htmlLang: 'ja',
+    title: 'Starry Quiz TTS',
+    configHeading: 'configuration',
+    labelImport: 'JSON / TXT 読込',
+    labelRepeat: 'リピート',
+    labelDelay: '解答まで(秒)',
+    labelLanguage: '言語',
+    labelVoice: '声',
+    labelShowAnswer: '解答表示',
+    showAnswer0: 'クイズ中のみ表示',
+    showAnswer1: '常に表示',
+    labelDirectInput: '直接入力（1行に1問：質問|答え）',
+    directPlaceholder: '例：\n太陽系で最も大きい惑星は？|木星\n光が1年間に進む距離を何という？|光年\n最も近い恒星は？|プロキシマ・ケンタウリ',
+    loadFromInput: '📋 入力から読込',
+    directHelp: '「質問|答え」形式で1行1問。区切りは | または タブ',
+    clear: 'クリア',
+    rate: '速度',
+    volume: '音量',
+    start: '▶ 再生開始',
+    pause: '⏸ 一時停止 / 再開',
+    stop: '⏹ 停止',
+    questionList: 'question list',
+    statusReady: '準備完了',
+    statusReadyEmbedded: '準備完了（ボカロクイズ読込済み）',
+    statusExploring: (n) => `再生中 #${n}...`,
+    statusDiscoveryComplete: '最後まで再生しました',
+    statusVoyageEnd: '再生終了',
+    statusPaused: '一時停止中',
+    statusStopped: '停止しました',
+    choicesLabel: '選択肢',
+    correctLabel: '正解',
+    noInput: 'テキストが入力されていません',
+    invalidQA: '有効なQ&Aが見つかりません。「質問|答え」形式で入力してください。',
+    fileInvalidQA: '有効なQ&Aが見つかりません。「質問|答え」形式で記述してください。',
+    loadedCount: (n) => `${n}問 読み込みました！`,
+    jsonLoaded: 'JSON Loaded',
+    jsonParseError: 'JSONの解析に失敗しました。',
+    embeddedLoaded: (n) => `Vocaloid Quiz Loaded (${n}問)`,
+    embeddedFailed: '埋め込みデータの読込に失敗しました',
+    spaceHint: '⌨ <span class="kbd">Space</span> 再生/停止',
+    arrowHint: '<span class="kbd">←/→</span> 前/次',
+    aHint: '<span class="kbd">A</span> 表示切替'
+  },
+  en: {
+    htmlLang: 'en',
+    title: 'Starry Quiz TTS',
+    configHeading: 'configuration',
+    labelImport: 'Import JSON / TXT',
+    labelRepeat: 'Repeat',
+    labelDelay: 'Seconds before answer',
+    labelLanguage: 'Language',
+    labelVoice: 'Voice',
+    labelShowAnswer: 'Answer display',
+    showAnswer0: 'Show only during quiz',
+    showAnswer1: 'Always show',
+    labelDirectInput: 'Direct input (one question per line: question|answer)',
+    directPlaceholder: 'Example:\nWhich is the largest planet in the Solar System?|Jupiter\nWhat do you call the distance light travels in one year?|A light-year\nWhat is the nearest star to the Sun?|Proxima Centauri',
+    loadFromInput: '📋 Load from input',
+    directHelp: 'One question per line in “question|answer” format. Use | or a tab as the separator.',
+    clear: 'Clear',
+    rate: 'Rate',
+    volume: 'Volume',
+    start: '▶ PLAY START',
+    pause: '⏸ PAUSE / RESUME',
+    stop: '⏹ STOP',
+    questionList: 'question list',
+    statusReady: 'Ready',
+    statusReadyEmbedded: 'Ready (Vocaloid quiz loaded)',
+    statusExploring: (n) => `Playing #${n}...`,
+    statusDiscoveryComplete: 'Playback complete',
+    statusVoyageEnd: 'Reached the end',
+    statusPaused: 'Paused',
+    statusStopped: 'Stopped',
+    choicesLabel: 'Choices',
+    correctLabel: 'Correct answer',
+    noInput: 'No text has been entered.',
+    invalidQA: 'No valid Q&A pairs were found. Please use the “question|answer” format.',
+    fileInvalidQA: 'No valid Q&A pairs were found. Please write them in the “question|answer” format.',
+    loadedCount: (n) => `${n} questions loaded!`,
+    jsonLoaded: 'JSON loaded',
+    jsonParseError: 'Failed to parse JSON.',
+    embeddedLoaded: (n) => `Vocaloid Quiz Loaded (${n} questions)`,
+    embeddedFailed: 'Failed to load embedded data.',
+    spaceHint: '⌨ <span class="kbd">Space</span> Play/Pause',
+    arrowHint: '<span class="kbd">←/→</span> Prev/Next',
+    aHint: '<span class="kbd">A</span> Toggle answers'
+  }
+};
+
+function getUiLang() {
+  return elements.langHint.value.startsWith('en') ? 'en' : 'ja';
+}
+function t(key, ...args) {
+  const dict = I18N[getUiLang()] || I18N.ja;
+  const value = dict[key];
+  return typeof value === 'function' ? value(...args) : value;
+}
+function getLocalizedText(value, lang = getUiLang()) {
+  if (value && typeof value === 'object' && !Array.isArray(value)) {
+    return value[lang] ?? value.ja ?? value.en ?? '';
+  }
+  return value ?? '';
+}
+function getLocalizedChoices(value, lang = getUiLang()) {
+  if (Array.isArray(value)) return value;
+  if (value && typeof value === 'object') return value[lang] ?? value.ja ?? value.en ?? [];
+  return [];
+}
+function applyI18n() {
+  document.documentElement.lang = I18N[getUiLang()].htmlLang;
+  document.getElementById('appTitle').textContent = t('title');
+  document.getElementById('configHeading').textContent = t('configHeading');
+  document.getElementById('labelImport').textContent = t('labelImport');
+  document.getElementById('labelRepeat').textContent = t('labelRepeat');
+  document.getElementById('labelDelay').textContent = t('labelDelay');
+  document.getElementById('labelLanguage').textContent = t('labelLanguage');
+  document.getElementById('labelVoice').textContent = t('labelVoice');
+  document.getElementById('labelShowAnswer').textContent = t('labelShowAnswer');
+  document.getElementById('showAnswerOption0').textContent = t('showAnswer0');
+  document.getElementById('showAnswerOption1').textContent = t('showAnswer1');
+  document.getElementById('labelDirectInput').textContent = t('labelDirectInput');
+  document.getElementById('directInput').placeholder = t('directPlaceholder');
+  document.getElementById('loadDirectBtn').textContent = t('loadFromInput');
+  document.getElementById('directHelp').textContent = t('directHelp');
+  document.getElementById('clearBtn').textContent = t('clear');
+  document.getElementById('labelRate').textContent = t('rate');
+  document.getElementById('labelVolume').textContent = t('volume');
+  document.getElementById('startBtn').textContent = t('start');
+  document.getElementById('pauseBtn').textContent = t('pause');
+  document.getElementById('stopBtn').textContent = t('stop');
+  document.getElementById('questionListHeading').textContent = t('questionList');
+  document.getElementById('kbdSpaceHint').innerHTML = t('spaceHint');
+  document.getElementById('kbdArrowHint').innerHTML = t('arrowHint');
+  document.getElementById('kbdAHint').innerHTML = t('aHint');
+  if (!playing && !paused && idx < 0) updateStatus(t('statusReady'));
+  renderList();
+}
+
+
+const EMBEDDED_DATA = {"version": 2, "items": [{"q": {"ja": "メルトで使用された音声ライブラリは？", "en": "Which vocal library was used in Melt?"}, "a": {"ja": "初音ミク", "en": "Hatsune Miku"}}, {"q": {"ja": "炉心融解で使用された音声ライブラリは？", "en": "Which vocal library was used in Roshin Yuukai (Meltdown)?"}, "a": {"ja": "鏡音リン", "en": "Kagamine Rin"}}, {"q": {"ja": "magnetで使用された音声ライブラリは？", "en": "Which vocal libraries were used in magnet?"}, "a": {"ja": "初音ミク・巡音ルカ", "en": "Hatsune Miku & Megurine Luka"}}, {"q": {"ja": "Just Be Friendsで使用された音声ライブラリは？", "en": "Which vocal library was used in Just Be Friends?"}, "a": {"ja": "巡音ルカ", "en": "Megurine Luka"}}, {"q": {"ja": "悪ノ娘で使用された音声ライブラリは？", "en": "Which vocal library was used in Daughter of Evil?"}, "a": {"ja": "鏡音リン", "en": "Kagamine Rin"}}, {"q": {"ja": "悪ノ召使で使用された音声ライブラリは？", "en": "Which vocal library was used in Servant of Evil?"}, "a": {"ja": "鏡音レン", "en": "Kagamine Len"}}, {"q": {"ja": "天ノ弱で使用された音声ライブラリは？", "en": "Which vocal library was used in Amanojaku?"}, "a": {"ja": "GUMI", "en": "GUMI"}}, {"q": {"ja": "モザイクロールで使用された音声ライブラリは？", "en": "Which vocal library was used in Mosaic Roll?"}, "a": {"ja": "GUMI", "en": "GUMI"}}, {"q": {"ja": "六兆年と一夜物語で使用された音声ライブラリは？", "en": "Which vocal library was used in Six Trillion Years and Overnight Story?"}, "a": {"ja": "IA", "en": "IA"}}, {"q": {"ja": "ロストワンの号哭で使用された音声ライブラリは？", "en": "Which vocal library was used in Lost One’s Weeping?"}, "a": {"ja": "鏡音リン", "en": "Kagamine Rin"}}, {"q": {"ja": "いーあるふぁんくらぶで使用された音声ライブラリは？", "en": "Which vocal library was used in 1 2 Fanclub?"}, "a": {"ja": "GUMI", "en": "GUMI"}}, {"q": {"ja": "ドーナツホールで使用された音声ライブラリは？", "en": "Which vocal library was used in Donut Hole?"}, "a": {"ja": "GUMI", "en": "GUMI"}}, {"q": {"ja": "深海少女で使用された音声ライブラリは？", "en": "Which vocal library was used in Deep Sea Girl?"}, "a": {"ja": "初音ミク", "en": "Hatsune Miku"}}, {"q": {"ja": "千本桜で使用された音声ライブラリは？", "en": "Which vocal library was used in Senbonzakura?"}, "a": {"ja": "初音ミク", "en": "Hatsune Miku"}}, {"q": {"ja": "ブリキノダンスで使用された音声ライブラリは？", "en": "Which vocal library was used in Buriki no Dance?"}, "a": {"ja": "初音ミク", "en": "Hatsune Miku"}}, {"q": {"ja": "妄想税で使用された音声ライブラリは？", "en": "Which vocal library was used in Delusion Tax?"}, "a": {"ja": "初音ミク", "en": "Hatsune Miku"}}, {"q": {"ja": "ECHOで使用された音声ライブラリは？", "en": "Which vocal library was used in ECHO?"}, "a": {"ja": "GUMI", "en": "GUMI"}}, {"q": {"ja": "威風堂々で使用された音声ライブラリは？", "en": "Which vocal library was used in Ifuudoudou?"}, "a": {"ja": "巡音ルカ", "en": "Megurine Luka"}}, {"q": {"ja": "ネコミミアーカイブで使用された音声ライブラリは？", "en": "Which vocal library was used in Nekomimi Archive?"}, "a": {"ja": "GUMI", "en": "GUMI"}}, {"q": {"ja": "心拍数♯0822で使用された音声ライブラリは？", "en": "Which vocal library was used in Heartbeat #0822?"}, "a": {"ja": "初音ミク", "en": "Hatsune Miku"}}, {"q": {"ja": "glowで使用された音声ライブラリは？", "en": "Which vocal library was used in glow?"}, "a": {"ja": "初音ミク", "en": "Hatsune Miku"}}, {"q": {"ja": "カゲロウデイズで使用された音声ライブラリは？", "en": "Which vocal library was used in Kagerou Days?"}, "a": {"ja": "IA", "en": "IA"}}, {"q": {"ja": "アウターサイエンスで使用された音声ライブラリは？", "en": "Which vocal library was used in Outer Science?"}, "a": {"ja": "IA", "en": "IA"}}, {"q": {"ja": "とある一家の御茶会議で使用された音声ライブラリは？", "en": "Which vocal library was used in A Certain Family’s Tea Party Meeting?"}, "a": {"ja": "GUMI", "en": "GUMI"}}, {"q": {"ja": "魔法使いの弟子で使用された音声ライブラリは？", "en": "Which vocal library was used in The Sorcerer’s Apprentice?"}, "a": {"ja": "GUMI", "en": "GUMI"}}, {"q": {"ja": "メルトの投稿年は？", "en": "In what year was Melt originally uploaded?"}, "a": {"ja": "2007年", "en": "2007"}}, {"q": {"ja": "炉心融解の投稿年は？", "en": "In what year was Meltdown uploaded?"}, "a": {"ja": "2008年", "en": "2008"}}, {"q": {"ja": "裏表ラバーズの投稿年は？", "en": "In what year was Ura-Omote Lovers uploaded?"}, "a": {"ja": "2009年", "en": "2009"}}, {"q": {"ja": "ワールズエンド・ダンスホールの投稿年は？", "en": "In what year was World’s End Dancehall uploaded?"}, "a": {"ja": "2010年", "en": "2010"}}, {"q": {"ja": "マトリョシカの投稿年は？", "en": "In what year was Matryoshka uploaded?"}, "a": {"ja": "2010年", "en": "2010"}}, {"q": {"ja": "千本桜の投稿年は？", "en": "In what year was Senbonzakura uploaded?"}, "a": {"ja": "2011年", "en": "2011"}}, {"q": {"ja": "カゲロウデイズの投稿年は？", "en": "In what year was Kagerou Days uploaded?"}, "a": {"ja": "2011年", "en": "2011"}}, {"q": {"ja": "六兆年と一夜物語の投稿年は？", "en": "In what year was Six Trillion Years and Overnight Story uploaded?"}, "a": {"ja": "2012年", "en": "2012"}}, {"q": {"ja": "脳漿炸裂ガールの投稿年は？", "en": "In what year was Brain Fluid Explosion Girl uploaded?"}, "a": {"ja": "2012年", "en": "2012"}}, {"q": {"ja": "ロストワンの号哭の投稿年は？", "en": "In what year was Lost One’s Weeping uploaded?"}, "a": {"ja": "2013年", "en": "2013"}}, {"q": {"ja": "ドーナツホールの投稿年は？", "en": "In what year was Donut Hole uploaded?"}, "a": {"ja": "2013年", "en": "2013"}}, {"q": {"ja": "ブリキノダンスの投稿年は？", "en": "In what year was Buriki no Dance uploaded?"}, "a": {"ja": "2013年", "en": "2013"}}, {"q": {"ja": "透明エレジーの投稿年は？", "en": "In what year was Transparent Elegy uploaded?"}, "a": {"ja": "2013年", "en": "2013"}}, {"q": {"ja": "妄想税の投稿年は？", "en": "In what year was Delusion Tax uploaded?"}, "a": {"ja": "2014年", "en": "2014"}}, {"q": {"ja": "恋愛裁判の投稿年は？", "en": "In what year was Love Trial uploaded?"}, "a": {"ja": "2014年", "en": "2014"}}, {"q": {"ja": "ELECTの投稿年は？", "en": "In what year was ELECT uploaded?"}, "a": {"ja": "2014年", "en": "2014"}}, {"q": {"ja": "いーあるふぁんくらぶの投稿年は？", "en": "In what year was 1 2 Fanclub uploaded?"}, "a": {"ja": "2012年", "en": "2012"}}, {"q": {"ja": "天ノ弱の投稿年は？", "en": "In what year was Amanojaku uploaded?"}, "a": {"ja": "2011年", "en": "2011"}}, {"q": {"ja": "深海少女の投稿年は？", "en": "In what year was Deep Sea Girl uploaded?"}, "a": {"ja": "2010年", "en": "2010"}}, {"q": {"ja": "心拍数♯0822の投稿年は？", "en": "In what year was Heartbeat #0822 uploaded?"}, "a": {"ja": "2011年", "en": "2011"}}, {"q": {"ja": "ネコミミアーカイブの投稿年は？", "en": "In what year was Nekomimi Archive uploaded?"}, "a": {"ja": "2011年", "en": "2011"}}, {"q": {"ja": "威風堂々の投稿年は？", "en": "In what year was Ifuudoudou uploaded?"}, "a": {"ja": "2012年", "en": "2012"}}, {"q": {"ja": "インビジブルの投稿年は？", "en": "In what year was Invisible uploaded?"}, "a": {"ja": "2011年", "en": "2011"}}, {"q": {"ja": "悪ノ娘の投稿年は？", "en": "In what year was Daughter of Evil uploaded?"}, "a": {"ja": "2008年", "en": "2008"}}, {"q": {"ja": "ココロの投稿年は？", "en": "In what year was Kokoro uploaded?"}, "a": {"ja": "2008年", "en": "2008"}}, {"q": {"ja": "初音ミクの消失の投稿時設定BPMは？", "en": "What was the original BPM setting of The Disappearance of Hatsune Miku?"}, "a": {"ja": "240", "en": "240"}}, {"q": {"ja": "ワールズエンド・ダンスホールの投稿時設定BPMは？", "en": "What was the original BPM of World’s End Dancehall?"}, "a": {"ja": "171", "en": "171"}}, {"q": {"ja": "ロストワンの号哭の投稿時設定BPMは？", "en": "What was the original BPM of Lost One’s Weeping?"}, "a": {"ja": "162", "en": "162"}}, {"q": {"ja": "千本桜の投稿時設定BPMは？", "en": "What was the original BPM of Senbonzakura?"}, "a": {"ja": "154", "en": "154"}}, {"q": {"ja": "六兆年と一夜物語の投稿時設定BPMは？", "en": "What was the original BPM of Six Trillion Years and Overnight Story?"}, "a": {"ja": "186", "en": "186"}}, {"q": {"ja": "ブリキノダンスの投稿時設定BPMは？", "en": "What was the original BPM of Buriki no Dance?"}, "a": {"ja": "172", "en": "172"}}, {"q": {"ja": "透明エレジーの投稿時設定BPMは？", "en": "What was the original BPM of Transparent Elegy?"}, "a": {"ja": "220", "en": "220"}}, {"q": {"ja": "妄想税の投稿時設定BPMは？", "en": "What was the original BPM of Delusion Tax?"}, "a": {"ja": "134", "en": "134"}}, {"q": {"ja": "天樂の投稿時設定BPMは？", "en": "What was the original BPM of Tengaku?"}, "a": {"ja": "232", "en": "232"}}, {"q": {"ja": "脳漿炸裂ガールの投稿時設定BPMは？", "en": "What was the original BPM of Brain Fluid Explosion Girl?"}, "a": {"ja": "155", "en": "155"}}, {"q": {"ja": "ドーナツホールのメインパートの基本拍子は？", "en": "What is the main time signature of Donut Hole?"}, "a": {"ja": "4/4", "en": "4/4"}}, {"q": {"ja": "悪ノ娘のメインパートの基本拍子は？", "en": "What is the main time signature of Daughter of Evil?"}, "a": {"ja": "4/4", "en": "4/4"}}, {"q": {"ja": "メルトのメインパートの基本拍子は？", "en": "What is the main time signature of Melt?"}, "a": {"ja": "4/4", "en": "4/4"}}, {"q": {"ja": "glowのメインパートの基本拍子は？", "en": "What is the main time signature of glow?"}, "a": {"ja": "4/4", "en": "4/4"}}, {"q": {"ja": "ECHOのメインパートの基本拍子は？", "en": "What is the main time signature of ECHO?"}, "a": {"ja": "4/4", "en": "4/4"}}, {"q": {"ja": "メルトと炉心融解で（ニコニコ動画で）先に投稿されたのは？", "en": "Which was uploaded first on Nico Nico Douga: Melt or Meltdown?"}, "a": {"ja": "メルト", "en": "Melt"}}, {"q": {"ja": "千本桜と六兆年と一夜物語で（ニコニコ動画で）先に投稿されたのは？", "en": "Which was uploaded first: Senbonzakura or Six Trillion Years and Overnight Story?"}, "a": {"ja": "千本桜", "en": "Senbonzakura"}}, {"q": {"ja": "ロストワンの号哭とブリキノダンスで（ニコニコ動画で）先に投稿されたのは？", "en": "Which was uploaded first: Lost One’s Weeping or Buriki no Dance?"}, "a": {"ja": "ロストワンの号哭", "en": "Lost One’s Weeping"}}, {"q": {"ja": "マトリョシカとワールズエンド・ダンスホールで（ニコニコ動画で）先に投稿されたのは？", "en": "Which was uploaded first: Matryoshka or World’s End Dancehall?"}, "a": {"ja": "ワールズエンド・ダンスホール", "en": "World’s End Dancehall"}}, {"q": {"ja": "妄想税と恋愛裁判で（ニコニコ動画で）先に投稿されたのは？", "en": "Which was uploaded first: Delusion Tax or Love Trial?"}, "a": {"ja": "妄想税", "en": "Delusion Tax"}}, {"q": {"ja": "IAを使用している曲はどれか（千本桜・カゲロウデイズ・メルト）", "en": "Which song uses IA? (Senbonzakura / Kagerou Days / Melt)"}, "a": {"ja": "カゲロウデイズ", "en": "Kagerou Days"}}, {"q": {"ja": "巡音ルカ単独歌唱はどれか（magnet・Just Be Friends・悪ノ娘）", "en": "Which song features Megurine Luka as a solo vocalist? (magnet / Just Be Friends / Daughter of Evil)"}, "a": {"ja": "Just Be Friends", "en": "Just Be Friends"}}, {"q": {"ja": "GUMIを使用していない曲はどれか（モザイクロール・天ノ弱・千本桜）", "en": "Which song does NOT use GUMI? (Mosaic Roll / Amanojaku / Senbonzakura)"}, "a": {"ja": "千本桜", "en": "Senbonzakura"}}, {"q": {"ja": "鏡音リンを使用している曲はどれか（炉心融解・ECHO・深海少女）", "en": "Which song uses Kagamine Rin? (Meltdown / ECHO / Deep Sea Girl)"}, "a": {"ja": "炉心融解", "en": "Meltdown"}}, {"q": {"ja": "IAを使用していない曲はどれか（六兆年と一夜物語・アウターサイエンス・千本桜）", "en": "Which song does NOT use IA? (Six Trillion Years / Outer Science / Senbonzakura)"}, "a": {"ja": "千本桜", "en": "Senbonzakura"}}, {"q": {"ja": "初投稿時にVOCALOID3世代音源を使用した曲は？（六兆年・メルト・悪ノ娘）", "en": "Which song used a VOCALOID3 library at its original release? (Six Trillion Years / Melt / Daughter of Evil)"}, "a": {"ja": "六兆年", "en": "Six Trillion Years"}}, {"q": {"ja": "初投稿時にVOCALOID2世代音源の曲は？（メルト・妄想税・ECHO）", "en": "Which song used a VOCALOID2 library at its original release? (Melt / Delusion Tax / ECHO)"}, "a": {"ja": "メルト", "en": "Melt"}}, {"q": {"ja": "初投稿時にV3音源のIAを使用した曲は？", "en": "Which song used IA (VOCALOID3) at its original release?"}, "a": {"ja": "六兆年と一夜物語", "en": "Six Trillion Years and Overnight Story"}, "choices": {"ja": ["六兆年と一夜物語", "メルト", "千本桜"], "en": ["Six Trillion Years and Overnight Story", "Melt", "Senbonzakura"]}}, {"q": {"ja": "初投稿時にV2世代音源の初音ミクを使用した曲は？", "en": "Which song used Hatsune Miku (VOCALOID2) at its original release?"}, "a": {"ja": "メルト", "en": "Melt"}, "choices": {"ja": ["メルト", "千本桜", "天ノ弱"], "en": ["Melt", "Senbonzakura", "Amanojaku"]}}, {"q": {"ja": "初投稿時にV3世代音源のGUMIを使用した曲は？", "en": "Which song used GUMI (VOCALOID3) at its original release?"}, "a": {"ja": "ドーナツホール", "en": "Donut Hole"}, "choices": {"ja": ["ドーナツホール", "千本桜", "六兆年と一夜物語"], "en": ["Donut Hole", "Senbonzakura", "Six Trillion Years and Overnight Story"]}}, {"q": {"ja": "メルトの作曲者は？", "en": "Who composed Melt?"}, "a": {"ja": "ryo", "en": "ryo"}}, {"q": {"ja": "炉心融解の作曲者は？", "en": "Who composed Meltdown?"}, "a": {"ja": "iroha", "en": "iroha"}}, {"q": {"ja": "裏表ラバーズの作曲者は？", "en": "Who composed Ura-Omote Lovers?"}, "a": {"ja": "wowaka", "en": "wowaka"}}, {"q": {"ja": "マトリョシカの作曲者は？", "en": "Who composed Matryoshka?"}, "a": {"ja": "ハチ", "en": "Hachi"}}, {"q": {"ja": "千本桜の作曲者は？", "en": "Who composed Senbonzakura?"}, "a": {"ja": "黒うさP", "en": "Kurousa-P"}}, {"q": {"ja": "六兆年と一夜物語の作曲者は？", "en": "Who composed Six Trillion Years and Overnight Story?"}, "a": {"ja": "kemu", "en": "kemu"}}, {"q": {"ja": "ロストワンの号哭の作曲者は？", "en": "Who composed Lost One’s Weeping?"}, "a": {"ja": "Neru", "en": "Neru"}}, {"q": {"ja": "妄想税の作曲者は？", "en": "Who composed Delusion Tax?"}, "a": {"ja": "DECO*27", "en": "DECO*27"}}, {"q": {"ja": "ブリキノダンスの作曲者は？", "en": "Who composed Buriki no Dance?"}, "a": {"ja": "日向電工", "en": "Hinata Denko"}}, {"q": {"ja": "ECHOの作曲者は？", "en": "Who composed ECHO?"}, "a": {"ja": "Crusher-P", "en": "Crusher-P"}}, {"q": {"ja": "天ノ弱の作曲者は？", "en": "Who composed Amanojaku?"}, "a": {"ja": "164", "en": "164"}}, {"q": {"ja": "いーあるふぁんくらぶの作曲者は？", "en": "Who composed 1 2 Fanclub?"}, "a": {"ja": "みきとP", "en": "Mikito-P"}}, {"q": {"ja": "ネコミミアーカイブの作曲者は？", "en": "Who composed Nekomimi Archive?"}, "a": {"ja": "糞田舎P", "en": "Kusoinaka-P"}}, {"q": {"ja": "glowの作曲者は？", "en": "Who composed glow?"}, "a": {"ja": "keeno", "en": "keeno"}}, {"q": {"ja": "心拍数♯0822の作曲者は？", "en": "Who composed Heartbeat #0822?"}, "a": {"ja": "蝶々P", "en": "Chouchou-P"}}, {"q": {"ja": "カゲロウデイズの作曲者は？", "en": "Who composed Kagerou Days?"}, "a": {"ja": "じん", "en": "Jin"}}, {"q": {"ja": "インビジブルの作曲者は？", "en": "Who composed Invisible?"}, "a": {"ja": "kemu", "en": "kemu"}}, {"q": {"ja": "悪ノ娘の作曲者は？", "en": "Who composed Daughter of Evil?"}, "a": {"ja": "mothy", "en": "mothy"}}, {"q": {"ja": "とある一家の御茶会議の作曲者は？", "en": "Who composed A Certain Family’s Tea Party Meeting?"}, "a": {"ja": "くるりんご", "en": "Kururingo"}}, {"q": {"ja": "魔法使いの弟子の作曲者は？", "en": "Who composed The Sorcerer’s Apprentice?"}, "a": {"ja": "くるりんご", "en": "Kururingo"}}, {"q": {"ja": "初期Project DIVAのモーション制作に関わり、後に人気声優となった人物は？", "en": "Who worked on early Project DIVA motion production and later became a popular voice actress?"}, "a": {"ja": "小倉唯", "en": "Yui Ogura"}, "choices": {"ja": ["愛川こずえ", "みうめ", "小倉唯", "ATY"], "en": ["Aikawa Kozue", "Miume", "Yui Ogura", "ATY"]}}, {"q": {"ja": "DIVAシリーズの楽曲制作に関わった「livetune」の中心人物は？", "en": "Who was the central figure of livetune involved in DIVA series music production?"}, "a": {"ja": "kz", "en": "kz"}, "choices": {"ja": ["wowaka", "kz", "八王子P", "DECO*27"], "en": ["wowaka", "kz", "Hachioji-P", "DECO*27"]}}, {"q": {"ja": "「踊ってみた」文化出身で商業ダンサーへ進出した流れを象徴する人物は？", "en": "Who symbolizes the transition from the Odotte Mita dance culture to commercial dance?"}, "a": {"ja": "みうめ", "en": "Miume"}, "choices": {"ja": ["みうめ", "ryo", "doriko", "samfree"], "en": ["Miume", "ryo", "doriko", "samfree"]}}, {"q": {"ja": "DIVAが「二次創作の逆輸入」と呼ばれる理由は？", "en": "Why is DIVA sometimes called a reverse import of fan works?"}, "a": {"ja": "ファン投稿楽曲が公式化", "en": "Fan-submitted songs were made official"}, "choices": {"ja": ["公式曲のみ収録", "ファン投稿楽曲が公式化", "海外制作", "実写化"], "en": ["Only official songs were included", "Fan-submitted songs were made official", "Produced overseas", "Live-action adaptation"]}}, {"q": {"ja": "ボカロ文化において「キャラが先に立つ」現象は何と呼ばれることがある？", "en": "What is the phenomenon called where characters take the lead over creators in Vocaloid culture?"}, "a": {"ja": "キャラクターIP主導", "en": "Character IP-driven model"}, "choices": {"ja": ["声優化", "キャラクターIP主導", "実写回帰", "無名化"], "en": ["Voice-actorization", "Character IP-driven model", "Shift toward live action", "De-identification"]}}, {"q": {"ja": "「ルカルカ★ナイトフィーバー」の振付で広く知られる人物は？", "en": "Who is widely known for choreographing Luka Luka★Night Fever?"}, "a": {"ja": "愛川こずえ", "en": "Aikawa Kozue"}, "choices": {"ja": ["みうめ", "愛川こずえ", "めろちん", "ATY"], "en": ["Miume", "Aikawa Kozue", "Melochin", "ATY"]}}, {"q": {"ja": "「ワールズエンド・ダンスホール」の踊ってみたで有名なユニットは？", "en": "Which dance unit became famous for performing World’s End Dancehall?"}, "a": {"ja": "てぃ☆イン！", "en": "T☆in!"}, "choices": {"ja": ["RAB", "ATY", "てぃ☆イン！", "Q'ulle"], "en": ["RAB", "ATY", "T☆in!", "Q'ulle"]}}, {"q": {"ja": "「Tell Your World」の振付で知られる踊り手は？", "en": "Who choreographed Tell Your World?"}, "a": {"ja": "めろちん", "en": "Melochin"}, "choices": {"ja": ["めろちん", "みうめ", "愛川こずえ", "紫音リア"], "en": ["Melochin", "Miume", "Aikawa Kozue", "Shion Rea"]}}, {"q": {"ja": "「カゲロウデイズ」の作曲者じんが当時使用していた名義は？", "en": "What alias was Jin using at the time of Kagerou Days?"}, "a": {"ja": "じん（自然の敵P）", "en": "Jin (Shizen no Teki-P)"}, "choices": {"ja": ["じん（自然の敵P）", "じん（ワンオポ）", "じん（IA公式）", "じん（メカクシ団）"], "en": ["Jin (Shizen no Teki-P)", "Jin (One Opo)", "Jin (IA Official)", "Jin (Mekakushi-dan)"]}}, {"q": {"ja": "カゲロウデイズの物語で繰り返される構造は？", "en": "What structural element repeats in the story of Kagerou Days?"}, "a": {"ja": "タイムリープ", "en": "Time loop"}, "choices": {"ja": ["タイムリープ", "パラレルワールド完全分岐", "記憶喪失のみ", "夢オチ"], "en": ["Time loop", "Complete parallel-world branching", "Amnesia only", "It was all a dream"]}}, {"q": {"ja": "「目」に関する能力が登場する物語全体の名称は？", "en": "What is the overall name of the story featuring eye-related abilities?"}, "a": {"ja": "カゲロウプロジェクト", "en": "Kagerou Project"}, "choices": {"ja": ["メカクシ団", "カゲロウプロジェクト", "目隠し団", "デイズシリーズ"], "en": ["Mekakushi-dan", "Kagerou Project", "Blindfold Group", "Days Series"]}}, {"q": {"ja": "「カゲロウデイズ」の主人公に関係する楽曲はどれ？", "en": "Which song is closely connected to the protagonist of Kagerou Days?"}, "a": {"ja": "ロスタイムメモリー", "en": "Lost Time Memory"}, "choices": {"ja": ["ロスタイムメモリー", "想像フォレスト", "夕景イエスタデイ", "如月アテンション"], "en": ["Lost Time Memory", "Imagination Forest", "Yukei Yesterday", "Kisaragi Attention"]}}, {"q": {"ja": "IAがメインボーカルとなった代表的カゲプロ曲は？", "en": "Which KagePro song features IA as the main vocalist?"}, "a": {"ja": "アウターサイエンス", "en": "Outer Science"}, "choices": {"ja": ["メルト", "千本桜", "アウターサイエンス", "ワールズエンド・ダンスホール"], "en": ["Melt", "Senbonzakura", "Outer Science", "World’s End Dancehall"]}}, {"q": {"ja": "カゲロウプロジェクトがアニメ化された作品名は？", "en": "What is the title of the anime adaptation of Kagerou Project?"}, "a": {"ja": "メカクシティアクターズ", "en": "Mekakucity Actors"}, "choices": {"ja": ["メカクシティリロード", "メカクシティアクターズ", "デイズアクター", "カゲプロTV"], "en": ["Mekakucity Reload", "Mekakucity Actors", "Days Actor", "KagePro TV"]}}, {"q": {"ja": "「メカクシティアクターズ」のアニメ制作会社は？", "en": "Which studio produced Mekakucity Actors?"}, "a": {"ja": "SHAFT", "en": "SHAFT"}, "choices": {"ja": ["MAPPA", "A-1 Pictures", "SHAFT", "ufotable"], "en": ["MAPPA", "A-1 Pictures", "SHAFT", "ufotable"]}}, {"q": {"ja": "「カゲロウデイズ」の歌詞に登場する日付は？", "en": "What date appears in the lyrics of Kagerou Days?"}, "a": {"ja": "8月15日", "en": "August 15"}, "choices": {"ja": ["8月14日", "8月15日", "7月21日", "9月1日"], "en": ["August 14", "August 15", "July 21", "September 1"]}}, {"q": {"ja": "カゲロウデイズのPVで象徴的に描かれる動物は？", "en": "Which animal is symbolically depicted in the PV of Kagerou Days?"}, "a": {"ja": "蛇", "en": "Snake"}, "choices": {"ja": ["黒猫", "蛇", "鹿", "鳥"], "en": ["Black cat", "Snake", "Deer", "Bird"]}}, {"q": {"ja": "カゲロウデイズの楽曲内で繰り返されるテーマは？", "en": "What recurring theme appears in Kagerou Days?"}, "a": {"ja": "夏の終わりと死", "en": "The end of summer and death"}, "choices": {"ja": ["永遠の幸福", "夏の終わりと死", "宇宙戦争", "恋愛成就"], "en": ["Eternal happiness", "The end of summer and death", "Space war", "Romantic fulfillment"]}}, {"q": {"ja": "カゲロウプロジェクトの中心ボーカロイドは？", "en": "Which Vocaloid is central to the Kagerou Project?"}, "a": {"ja": "IA", "en": "IA"}, "choices": {"ja": ["初音ミクのみ", "IA", "鏡音リン", "GUMI"], "en": ["Hatsune Miku only", "IA", "Kagamine Rin", "GUMI"]}}, {"q": {"ja": "カゲロウデイズ投稿当時のボカロエンジン世代は？", "en": "Which Vocaloid engine generation was current when Kagerou Days was uploaded?"}, "a": {"ja": "VOCALOID2", "en": "VOCALOID2"}, "choices": {"ja": ["VOCALOID1", "VOCALOID2", "VOCALOID3", "VOCALOID5"], "en": ["VOCALOID1", "VOCALOID2", "VOCALOID3", "VOCALOID5"]}}, {"q": {"ja": "「目を奪う」能力を持つキャラクターは？", "en": "Which character has the ability 'to steal eyes'?"}, "a": {"ja": "カノ", "en": "Kano"}, "choices": {"ja": ["キド", "カノ", "セト", "ヒビヤ"], "en": ["Kido", "Kano", "Seto", "Hibiya"]}}, {"q": {"ja": "アメリカで初音ミクが大規模ライブを行った代表的イベントは？", "en": "Which major event featured Hatsune Miku performing large-scale concerts in the United States?"}, "a": {"ja": "Anime Expo", "en": "Anime Expo"}, "choices": {"ja": ["Coachella", "Anime Expo", "Comic-Con", "SXSW"], "en": ["Coachella", "Anime Expo", "Comic-Con", "SXSW"]}}, {"q": {"ja": "中国発の人気バーチャルシンガーは？", "en": "Which popular virtual singer originated in China?"}, "a": {"ja": "洛天依", "en": "Luo Tianyi"}, "choices": {"ja": ["洛天依", "IA", "GUMI", "可不"], "en": ["Luo Tianyi", "IA", "GUMI", "KAFU"]}}, {"q": {"ja": "韓国でボカロが広がる際に強かった文化圏は？", "en": "Which cultural scene strongly supported Vocaloid growth in Korea?"}, "a": {"ja": "インディーDTM", "en": "Indie DTM scene"}, "choices": {"ja": ["トロット", "インディーDTM", "K-POP事務所直営", "演歌"], "en": ["Trot", "Indie DTM scene", "Directly run by K-POP agencies", "Enka"]}}, {"q": {"ja": "韓国で誕生した最初のボーカロイドは？", "en": "What was the first Korean Vocaloid?"}, "a": {"ja": "SeeU", "en": "SeeU"}, "choices": {"ja": ["洛天依", "SeeU", "GUMI", "Gachapoid"], "en": ["Luo Tianyi", "SeeU", "GUMI", "Gachapoid"]}}, {"q": {"ja": "中国でのボカロ二次創作の主な発表場所は？", "en": "Where are most Chinese Vocaloid fan works published?"}, "a": {"ja": "Bilibili", "en": "Bilibili"}, "choices": {"ja": ["Weiboのみ", "Bilibili", "TikTok限定", "国家放送"], "en": ["Weibo only", "Bilibili", "TikTok only", "National broadcasting"]}}, {"q": {"ja": "日本と海外でのボカロ受容の最大の違いは？", "en": "What is the biggest difference in Vocaloid reception between Japan and overseas?"}, "a": {"ja": "日本は二次創作主導、海外はライブ体験主導", "en": "Japan is fan-creation-driven; overseas is live-experience-driven"}, "choices": {"ja": ["日本は技術重視、海外はキャラ重視", "日本は二次創作主導、海外はライブ体験主導", "海外はDTM否定", "日本はライブ否定"], "en": ["Japan focuses on technology, overseas on characters", "Japan is fan-creation-driven; overseas is live-experience-driven", "Overseas rejects DTM", "Japan rejects live performances"]}}, {"q": {"ja": "初音ミクが初めて海外公演を行った国は？", "en": "In which country did Hatsune Miku first perform overseas?"}, "a": {"ja": "台湾", "en": "Taiwan"}, "choices": {"ja": ["アメリカ", "シンガポール", "台湾", "フランス"], "en": ["United States", "Singapore", "Taiwan", "France"]}}, {"q": {"ja": "ブラジルでのボカロ人気の拡大に影響した文化イベントは？", "en": "Which cultural event contributed to Vocaloid’s rise in Brazil?"}, "a": {"ja": "Anime Friends", "en": "Anime Friends"}, "choices": {"ja": ["コミックマーケット", "Anime Friends", "超会議", "M3"], "en": ["Comic Market", "Anime Friends", "Cho Kaigi", "M3"]}}, {"q": {"ja": "ブラジルでのボカロ人気はどの音楽ジャンルと相性が良い？", "en": "Which music style blends well with Vocaloid popularity in Brazil?"}, "a": {"ja": "サンバ系リズムとの融合", "en": "Fusion with samba-style rhythms"}, "choices": {"ja": ["サンバ系リズムとの融合", "雅楽", "演歌", "民謡のみ"], "en": ["Fusion with samba-style rhythms", "Gagaku", "Enka", "Only folk songs"]}}, {"q": {"ja": "スペインでのボカロ拡散に寄与したイベントは？", "en": "Which event helped spread Vocaloid culture in Spain?"}, "a": {"ja": "Salón del Manga de Barcelona", "en": "Salón del Manga de Barcelona"}, "choices": {"ja": ["コミックマーケット", "Salón del Manga de Barcelona", "超会議", "M3"], "en": ["Comic Market", "Salón del Manga de Barcelona", "Cho Kaigi", "M3"]}}, {"q": {"ja": "スペイン語圏のファンがよく行う二次創作は？", "en": "What type of fan work is common among Spanish-speaking fans?"}, "a": {"ja": "MMDダンス", "en": "MMD dance videos"}, "choices": {"ja": ["演歌カバー", "MMDダンス", "軍歌アレンジ", "雅楽化"], "en": ["Enka covers", "MMD dance videos", "Military-song arrangements", "Turned into gagaku"]}}, {"q": {"ja": "毎年冬にオンライン中心で開催される、ボカロ動画祭典は？", "en": "What is the name of the annual winter online Vocaloid festival?"}, "a": {"ja": "The VOCALOID Collection", "en": "The VOCALOID Collection"}, "choices": {"ja": ["VOCALOID Overdrive", "The VOCALOID Collection", "Vocaloid Universe", "Vocaloid Revolution"], "en": ["VOCALOID Overdrive", "The VOCALOID Collection", "Vocaloid Universe", "Vocaloid Revolution"]}}, {"q": {"ja": "MIKU EXPO 世界ツアーの初開催は何年？", "en": "In what year was the first MIKU EXPO world tour held?"}, "a": {"ja": "2014年", "en": "2014"}, "choices": {"ja": ["2012年", "2014年", "2016年", "2018年"], "en": ["2012", "2014", "2016", "2018"]}}]};
 
 // 隠し設定（UIから省いたもの）
 const gapQ = { value: 0.5 };
@@ -419,7 +560,7 @@ function loadVoices() {
   });
 }
 speechSynthesis.addEventListener('voiceschanged', loadVoices);
-elements.langHint.addEventListener('change', loadVoices);
+elements.langHint.addEventListener('change', () => { loadVoices(); applyI18n(); });
 
 function hardStop() {
   playSessionId++;
@@ -456,19 +597,21 @@ function renderList() {
     row.dataset.idx = i;
 
     const content = document.createElement('div');
-    const qDiv = document.createElement('div'); qDiv.className = 'q'; qDiv.textContent = `#${i+1} ${it.q}`;
+    const question = getLocalizedText(it.q);
+    const answer = getLocalizedText(it.a);
+    const choices = getLocalizedChoices(it.choices);
+    const qDiv = document.createElement('div'); qDiv.className = 'q'; qDiv.textContent = `#${i+1} ${question}`;
     content.appendChild(qDiv);
 
-
-    if (Array.isArray(it.choices) && it.choices.length) {
+    if (choices.length) {
       const cDiv = document.createElement('div');
       cDiv.style.color = 'var(--muted)';
       cDiv.style.fontSize = '0.85rem';
-      cDiv.textContent = it.choices.map((c, idx2) => `${String.fromCharCode(65+idx2)}. ${c}`).join('   ');
+      cDiv.textContent = choices.map((c, idx2) => `${String.fromCharCode(65+idx2)}. ${c}`).join('   ');
       content.appendChild(cDiv);
     }
     if (alwaysShow || revealedAnswerIdxSet.has(i) || (playing && i === idx && revealAnswerForCurrent)) {
-      const aDiv = document.createElement('div'); aDiv.className = 'a'; aDiv.textContent = `▸ ${it.a}`;
+      const aDiv = document.createElement('div'); aDiv.className = 'a'; aDiv.textContent = `▸ ${answer}`;
       content.appendChild(aDiv);
     }
     row.appendChild(content);
@@ -479,31 +622,32 @@ function renderList() {
 async function playLoop(sessionAtStart) {
   while (sessionAtStart === playSessionId && playing) {
     if (idx < 0 || idx >= items.length) {
-      playing = false; updateStatus('Discovery Complete'); renderList(); return;
+      playing = false; updateStatus(t('statusDiscoveryComplete')); renderList(); return;
     }
     const it = items[idx];
     revealAnswerForCurrent = false;
     renderList();
     updateProgress();
     elements.list.children[idx]?.scrollIntoView({behavior:'smooth', block:'center'});
-    updateStatus(`Exploring #${idx + 1}...`);
+    const question = getLocalizedText(it.q);
+    const answer = getLocalizedText(it.a);
+    const choices = getLocalizedChoices(it.choices);
+    updateStatus(t('statusExploring', idx + 1));
 
     for (let r = 0; r < parseInt(elements.repeatQ.value); r++) {
       if (sessionAtStart !== playSessionId) return;
-      await speakText(it.q, sessionAtStart);
+      await speakText(question, sessionAtStart);
       await sleep(500);
     }
 
-
-
-    // 選択肢がある場合は読み上げ（A/B/C...）
-    if (Array.isArray(it.choices) && it.choices.length) {
-      await speakText('選択肢', sessionAtStart);
+    if (choices.length) {
+      await speakText(t('choicesLabel'), sessionAtStart);
       await sleep(250);
-      for (let k = 0; k < it.choices.length; k++) {
+      for (let k = 0; k < choices.length; k++) {
         if (sessionAtStart !== playSessionId) return;
-        const label = String.fromCharCode(65 + k); // A, B, C...
-        await speakText(`${label}。${it.choices[k]}`, sessionAtStart);
+        const label = String.fromCharCode(65 + k);
+        const separator = getUiLang() === 'ja' ? '。' : '. ';
+        await speakText(`${label}${separator}${choices[k]}`, sessionAtStart);
         await sleep(250);
       }
     }
@@ -514,14 +658,15 @@ async function playLoop(sessionAtStart) {
     revealedAnswerIdxSet.add(idx);
     renderList();
 
-    if (Array.isArray(it.choices) && it.choices.length) {
-      await speakText(`正解。${it.a}`, sessionAtStart);
+    if (choices.length) {
+      const separator = getUiLang() === 'ja' ? '。' : ': ';
+      await speakText(`${t('correctLabel')}${separator}${answer}`, sessionAtStart);
     } else {
-      await speakText(it.a, sessionAtStart);
+      await speakText(answer, sessionAtStart);
     }
     await sleep(500);
     idx++;
-    if (idx >= items.length) { playing = false; updateStatus('Voyage End'); renderList(); return; }
+    if (idx >= items.length) { playing = false; updateStatus(t('statusVoyageEnd')); renderList(); return; }
   }
 }
 
@@ -529,7 +674,7 @@ async function playLoop(sessionAtStart) {
 // 直接入力から読込
 document.getElementById('loadDirectBtn').onclick = () => {
   const raw = document.getElementById('directInput').value.trim();
-  if (!raw) { showError('テキストが入力されていません'); return; }
+  if (!raw) { showError(t('noInput')); return; }
   const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
   const parsed = [];
   for (const line of lines) {
@@ -541,16 +686,16 @@ document.getElementById('loadDirectBtn').onclick = () => {
       if (q && a) parsed.push({ q, a });
     }
   }
-  if (!parsed.length) { showError('有効なQ&Aが見つかりません。「質問|答え」形式で入力してください。'); return; }
+  if (!parsed.length) { showError(t('invalidQA')); return; }
   loadDataFromJSON({ version: 1, items: parsed });
-  showSuccess(`${parsed.length}問 読み込みました！`);
+  showSuccess(t('loadedCount', parsed.length));
 };
 elements.startBtn.onclick = () => { if(!items.length) return; hardStop(); idx=0; playing=true; startNoteLoop(); playLoop(playSessionId); };
 elements.pauseBtn.onclick = () => {
   if (paused) { hardStop(); playing=true; paused=false; startNoteLoop(); playLoop(playSessionId); }
-  else if (playing) { hardStop(); playing=false; paused=true; startNoteLoop(); updateStatus('Paused'); renderList(); }
+  else if (playing) { hardStop(); playing=false; paused=true; startNoteLoop(); updateStatus(t('statusPaused')); renderList(); }
 };
-elements.stopBtn.onclick = () => { hardStop(); playing=false; paused=false; idx=-1; renderList(); updateProgress(); updateStatus('Stopped'); startNoteLoop(); };
+elements.stopBtn.onclick = () => { hardStop(); playing=false; paused=false; idx=-1; renderList(); updateProgress(); updateStatus(t('statusStopped')); startNoteLoop(); };
 elements.nextBtn.onclick = () => { if(!items.length) return; hardStop(); idx=Math.min(items.length-1, idx+1); playing=true; startNoteLoop(); playLoop(playSessionId); };
 elements.prevBtn.onclick = () => { if(!items.length) return; hardStop(); idx=Math.max(0, idx-1); playing=true; startNoteLoop(); playLoop(playSessionId); };
 
@@ -568,6 +713,7 @@ function loadDataFromJSON(data) {
   renderList();
   updateProgress();
   loadVoices();
+  applyI18n();
   startNoteLoop();
 }
 
@@ -590,16 +736,16 @@ elements.topImportFile.onchange = (e) => {
           if (q && a) parsed.push({ q, a });
         }
       }
-      if (!parsed.length) { showError('有効なQ&Aが見つかりません。「質問|答え」形式で記述してください。'); return; }
+      if (!parsed.length) { showError(t('fileInvalidQA')); return; }
       loadDataFromJSON({ version: 1, items: parsed });
-      showSuccess(`${parsed.length}問 読み込みました！`);
+      showSuccess(t('loadedCount', parsed.length));
     } else {
       // JSONファイル
       try {
         loadDataFromJSON(JSON.parse(content));
-        showSuccess('JSON Loaded');
+        showSuccess(t('jsonLoaded'));
       } catch {
-        showError('JSONの解析に失敗しました。');
+        showError(t('jsonParseError'));
       }
     }
   };
@@ -612,11 +758,12 @@ elements.topImportFile.onchange = (e) => {
 window.addEventListener('DOMContentLoaded', () => {
   try {
     loadDataFromJSON(EMBEDDED_DATA);
-    showSuccess(`Vocaloid Quiz Loaded (${(EMBEDDED_DATA.items||[]).length}問)`);
-    updateStatus('Ready (Vocaloid embedded)');
+    applyI18n();
+    showSuccess(t('embeddedLoaded', (EMBEDDED_DATA.items||[]).length));
+    updateStatus(t('statusReadyEmbedded'));
   } catch (e) {
-    showError('埋め込みデータの読込に失敗しました');
-    updateStatus('Ready');
+    showError(t('embeddedFailed'));
+    updateStatus(t('statusReady'));
   }
 });
 
@@ -625,6 +772,10 @@ window.addEventListener('keydown', (e) => {
   if (e.code === 'Space') { e.preventDefault(); elements.pauseBtn.click(); }
   if (e.key === 'ArrowRight') elements.nextBtn.click();
   if (e.key === 'ArrowLeft') elements.prevBtn.click();
+  if (e.key.toLowerCase() === 'a') {
+    elements.showAnswerSel.value = elements.showAnswerSel.value === '1' ? '0' : '1';
+    renderList();
+  }
 });
 
 /* =========================
